@@ -1,0 +1,78 @@
+Waterbody;Matrix;Substance;Threshold;Status;Units
+37-30;Sediment;Anthracene;85;2.3;µg/kg(2.5%TOC)
+37-30;Sediment;Benzo(ghi]perylene;85;41.6;µg/kg(2.5%TOC)
+37-30;Sediment;Benzo[a]anthracene;261;23.6;µg/kg(2.5%TOC)
+37-30;Sediment;Benzo[a]pyrene;430;31.8;µg/kg(2.5%TOC)
+37-30;Sediment;Dibenzotiophene;190;3.6;µg/kg(2.5%TOC)
+37-30;Sediment;Fluoranthene;600;60.9;µg/kg(2.5%TOC)
+37-30;Sediment;Fluorene, sediment;19;60.9;µg/kg(2.5%TOC)
+37-30;Sediment;Indeno[1,2,3-cd]pyrene;240;76.2;µg/kg(2.5%TOC)
+37-30;Sediment;Naphtalene;160;14.8;µg/kg(2.5%TOC)
+37-30;Sediment;Phenathrene;240;39.9;µg/kg(2.5%TOC)
+37-30;Sediment;Pyrene;665;59.8;µg/kg(2.5%TOC)
+37-30;Sediment;CB101;3;0.188;µg/kg(2.5%TOC)
+37-30;Sediment;CB118;0.6;0.18;µg/kg(2.5%TOC)
+37-30;Sediment;CB138;7.9;0.29;µg/kg(2.5%TOC)
+37-30;Sediment;CB153;40;0.35;µg/kg(2.5%TOC)
+37-30;Sediment;CB180;12;0.12;µg/kg(2.5%TOC)
+37-30;Sediment;CB28;1.7;0.11;µg/kg(2.5%TOC)
+37-30;Sediment;CB52;2.7;0.06;µg/kg(2.5%TOC)
+37-30;Sediment;Cd;1.2;0.236742424242424;mg/kg(5%Al)
+37-30;Sediment;Cr;81;46.3068181818182;mg/kg(5%Al)
+37-30;Sediment;Cu;34;11.4583333333333;mg/kg(5%Al)
+37-30;Sediment;Pb;47;17.8977272727273;mg/kg(5%Al)
+37-30;Sediment;Zn;150;108.238636363636;mg/kg(5%Al)
+37-30;Sediment;Hg;0.15;0.0606060606060606;mg/kg(5%Al)
+37-30;Sediment;HCHG, sediment;3;0.06;µg/kg(2.5%TOC)
+37-30;Sediment;TBT, sediment;0.8;2.18181818181818;µg/kg(2.5%TOC)
+37-30;Biota;Anthracene,mussel;290;3.125;µg/kg dw
+37-30;Biota;benzo(b,k)fluoranthen, mussel;5;1.5;µg/kg ww
+37-30;Biota;Benzo(ghi]perylene,mussel;5;0.81;µg/kg ww
+37-30;Biota;Benzo[a]anthracene,mussel;80;3.125;µg/kg dw
+37-30;Biota;Benzo[a]pyrene,mussel;5;0.58;µg/kg ww
+37-30;Biota;Fluoranthene,mussel;30;2.07;µg/kg ww
+37-30;Biota;Indeno[1,2,3-cd]pyrene,mussel;5;0.83;µg/kg ww
+37-30;Biota;Naphtalene,mussel;340;1.61;µg/kg dw
+37-30;Biota;Phenathrene,mussel;1700;19.90625;µg/kg dw
+37-30;Biota;Pyrene,mussel;100;12.5;µg/kg dw
+37-30;Biota;CB101,mussel;6;0.240625;µg/kg dw
+37-30;Biota;CB118,mussel;1.2;0.375;µg/kg dw
+37-30;Biota;CB138,mussel;15.8;0.453125;µg/kg dw
+37-30;Biota;CB153,mussel;80;0.6875;µg/kg dw
+37-30;Biota;CB180,mussel;24;0.146875;µg/kg dw
+37-30;Biota;CB28,mussel;3.2;0.16875;µg/kg dw
+37-30;Biota;CB52,mussel;5.4;0.0875;µg/kg dw
+37-30;Biota;DDEPP(mussel);10;0.1235;µg/kg ww
+37-30;Biota;HCHG(mussel);1.45;0.975;µg/kg dw
+37-30;Biota;TBT, mussel - not fish;12;2.04;µg/kg dw
+37-30;Biological Effects;VDSI(Neptunea,Nucella);2; ;VDS-index
+37-30;Biological Effects;VDSI(Buccinum,Nassarius) - not Littorina;0.3; ;VDS-index
+37-32;Sediment;Anthracene;85;1;µg/kg(2.5%TOC)
+37-32;Sediment;Benzo(ghi]perylene;85;2.3;µg/kg(2.5%TOC)
+37-32;Sediment;Benzo[a]anthracene;261;2.1;µg/kg(2.5%TOC)
+37-32;Sediment;Benzo[a]pyrene;430;3.5;µg/kg(2.5%TOC)
+37-32;Sediment;Dibenzotiophene;190;0.5;µg/kg(2.5%TOC)
+37-32;Sediment;Fluoranthene;600;2;µg/kg(2.5%TOC)
+37-32;Sediment;Fluorene, sediment;19;2;µg/kg(2.5%TOC)
+37-32;Sediment;Indeno[1,2,3-cd]pyrene;240;2;µg/kg(2.5%TOC)
+37-32;Sediment;Naphtalene;160;3.3;µg/kg(2.5%TOC)
+37-32;Sediment;Phenathrene;240;1;µg/kg(2.5%TOC)
+37-32;Sediment;Pyrene;665;1.7;µg/kg(2.5%TOC)
+37-32;Sediment;Cd;1.2;0.101351351351351;mg/kg(5%Al)
+37-32;Sediment;Cr;81;91.554054054054;mg/kg(5%Al)
+37-32;Sediment;Cu;34;6.08108108108108;mg/kg(5%Al)
+37-32;Sediment;Pb;47;29.7297297297297;mg/kg(5%Al)
+37-32;Sediment;Zn;150;77.7027027027027;mg/kg(5%Al)
+37-32;Sediment;Hg;0.15;0.027027027027027;mg/kg(5%Al)
+37-32;Sediment;TBT, sediment;0.8;2.4;µg/kg(2.5%TOC)
+37-32;Biota;Anthracene,mussel;290;3.125;µg/kg dw
+37-32;Biota;benzo(b,k)fluoranthen, mussel;5;0.96;µg/kg ww
+37-32;Biota;Benzo(ghi]perylene,mussel;5;0.5;µg/kg ww
+37-32;Biota;Benzo[a]anthracene,mussel;80;3.125;µg/kg dw
+37-32;Biota;Benzo[a]pyrene,mussel;5;0.83;µg/kg ww
+37-32;Biota;Fluoranthene,mussel;30;2.91;µg/kg ww
+37-32;Biota;Indeno[1,2,3-cd]pyrene,mussel;5;0.77;µg/kg ww
+37-32;Biota;Naphtalene,mussel;340;0.5;µg/kg dw
+37-32;Biota;Phenathrene,mussel;1700;16.5;µg/kg dw
+37-32;Biota;Pyrene,mussel;100;12.5625;µg/kg dw
+37-32;Biota;TBT, mussel - not fish;12;2.88;µg/kg dw
