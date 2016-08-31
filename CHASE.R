@@ -74,10 +74,9 @@ Assessment<- function(assessmentdata,summarylevel=1){
     names(matrices)[2] <- 'Matrix'
     
     
-    
     assessmentdata$CR<-ContaminationRatio(assessmentdata$Threshold,assessmentdata$Status,assessmentdata$Response)
     
-    QEdata<-summarise(group_by(assessmentdata,Waterbody,Matrix), sumCR=sum(CR), Count=n())
+    QEdata<-summarise(group_by(assessmentdata,Waterbody,Matrix), sumCR=sum(CR,na.rm = TRUE), Count=n())
     QEdata$ConSum<-QEdata$sumCR/sqrt(QEdata$Count)
     
     QEdata$sumCR <- NULL
@@ -92,9 +91,9 @@ Assessment<- function(assessmentdata,summarylevel=1){
     CHASE$Waterbody<-NULL
     CHASEQE<-inner_join(QEdata, CHASE, 'ConSum')
     CHASEQE<-rename(CHASEQE,Status=QEStatus,Worst=Matrix)
+    
     assessmentdata<-left_join(assessmentdata,QEdata,c('Waterbody','Matrix'))
     QEspr<-inner_join(QEspr, CHASEQE, 'Waterbody')
-    
     
     for(j in 1:nextra){
       if(extracols[j]=='Waterbody' & okextra[j]==0){
