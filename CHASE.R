@@ -76,9 +76,13 @@ Assessment<- function(assessmentdata,summarylevel=1){
     
     assessmentdata$CR<-ContaminationRatio(assessmentdata$Threshold,assessmentdata$Status,assessmentdata$Response)
     
+    MatchList<-c("bioeffect","bioeffects","bio effects","bio effect",
+                 "biological effects","biological effect")
     QEdata<-summarise(group_by(assessmentdata,Waterbody,Matrix), sumCR=sum(CR,na.rm = TRUE), Count=n())
-    QEdata$ConSum<-QEdata$sumCR/sqrt(QEdata$Count)
-    
+    #QEdata$ConSum<-QEdata$sumCR/sqrt(QEdata$Count)
+    QEdata$IsBio<-ifelse(tolower(QEdata$Matrix) %in% MatchList,TRUE,FALSE)
+    QEdata$ConSum<-QEdata$sumCR/ifelse(QEdata$IsBio,QEdata$Count,sqrt(QEdata$Count))
+    QEdata$IsBio<-NULL   
     QEdata$sumCR <- NULL
     QEdata$Count <- NULL
     QEspr<-spread(QEdata,Matrix,ConSum)
