@@ -7,7 +7,7 @@ Assessment<- function(assessmentdata,summarylevel=1){
   
   
   requiredcols <- c("Matrix","Substance","Threshold","Status")
-  extracols <- c("Waterbody","Response")
+  extracols <- c("Waterbody","Response","Type","ConfThreshold","ConfStatus")
   
   
   #Check column names in the imported data
@@ -37,7 +37,11 @@ Assessment<- function(assessmentdata,summarylevel=1){
   
   for(j in 1:nextra){
     if(okextra[j]==0){
-      assessmentdata[[extracols[j]]]<-1
+      if(regexpr("confidence",extracols[j],ignore.case=TRUE)>0){
+        assessmentdata[[extracols[j]]]<-0
+      }else{
+        assessmentdata[[extracols[j]]]<-1
+      }
     }
   }
   
@@ -75,28 +79,91 @@ Assessment<- function(assessmentdata,summarylevel=1){
     
     
     assessmentdata$CR<-ContaminationRatio(assessmentdata$Threshold,assessmentdata$Status,assessmentdata$Response)
+    assessmentdata$ConfScore<-Confidence(assessmentdata$ConfStatus,assessmentdata$ConfThreshold)
     
-    MatchList<-c("bioeffect","bioeffects","bio effects","bio effect",
-                 "biological effects","biological effect")
-    QEdata<-summarise(group_by(assessmentdata,Waterbody,Matrix), sumCR=sum(CR,na.rm = TRUE), Count=n())
+    # Add columns specifying if the inidcator is an organic or heavy metal. Used in confidence penalty calculations
+    assessmentdata$HM<-mapply(IsHeavyMetal,assessmentdata$Type)
+    assessmentdata$Org<-mapply(IsOrganic,assessmentdata$Type)
+    
+    MatchListBioEffects<-c("bioeffect","bioeffects","bio effects","bio effect",
+                    "biological effects","biological effect")
+    MatchListBiota<-c("biota","biot")
+    MatchListSed<-c("sediment","sed","sedi")
+    
+    QEtypeCount<-assessmentdata %>%
+      filter(!is.na(Type)) %>%
+      group_by(Waterbody,Matrix,Type) %>%
+      summarise(Count=n()) 
+    
+    QEdata<-assessmentdata %>%
+      group_by(Waterbody,Matrix) %>%
+      summarise(sumCR=sum(CR,na.rm = TRUE),
+                sumConf=sum(ConfScore,na.rm = TRUE), 
+                countHM=sum(HM,na.rm = TRUE), 
+                countOrg=sum(Org,na.rm = TRUE), 
+                Count=n()) %>%
+      ungroup()
+    
+    
     #QEdata$ConSum<-QEdata$sumCR/sqrt(QEdata$Count)
-    QEdata$IsBio<-ifelse(tolower(QEdata$Matrix) %in% MatchList,TRUE,FALSE)
+    QEdata$IsBio<-ifelse(tolower(QEdata$Matrix) %in% MatchListBioEffects,TRUE,FALSE)
+    QEdata$IsBiota<-ifelse(tolower(QEdata$Matrix) %in% MatchListBiota,TRUE,FALSE)
+    QEdata$IsSed<-ifelse(tolower(QEdata$Matrix) %in% MatchListSed,TRUE,FALSE)
     QEdata$ConSum<-QEdata$sumCR/ifelse(QEdata$IsBio,QEdata$Count,sqrt(QEdata$Count))
+    
+    QEdata$MultiplierHM<-ifelse(QEdata$countHM>0,1,0.75)
+    QEdata$MultiplierOrg<-ifelse(QEdata$countOrg>0,1,0.75)
+    QEdata$ConfScore<-ifelse(QEdata$IsBiota==TRUE||QEdata$IsSed==TRUE,
+                             QEdata$MultiplierHM*QEdata$MultiplierOrg,1)*QEdata$sumConf/QEdata$Count
+    
+    QEdata$Confidence<-mapply(ConfidenceStatus,QEdata$ConfScore,TRUE)
+    QEdata$MultiplierHM<-NULL
+    QEdata$MultiplierOrg<-NULL
+    QEdata$sumConf<-NULL
     QEdata$IsBio<-NULL   
     QEdata$sumCR <- NULL
     QEdata$Count <- NULL
-    QEspr<-spread(QEdata,Matrix,ConSum)
     
-    QEdata$QEStatus<-CHASEStatus(QEdata$ConSum)
+    
+      
+    QEspr<-QEdata %>%
+      select(Waterbody,Matrix,ConSum) %>%
+      spread(Matrix,ConSum)
+    
+    QEspr1<-QEspr
+    
+    QEdata$QEStatus<-CHASEStatus(QEdata$ConSum,2)
     QEdata<-left_join(matrices,QEdata,c('Waterbody','Matrix'))
     QEdata<-arrange(QEdata,Waterbody,Matrix)
+    QEdataOut<-QEdata %>%
+      select(Waterbody,Matrix,ConSum,QEStatus,ConfScore,Confidence)
     
-    CHASE<-summarise(group_by(QEdata,Waterbody), ConSum=max(ConSum, na.rm = TRUE))
-    CHASE$Waterbody<-NULL
-    CHASEQE<-inner_join(QEdata, CHASE, 'ConSum')
+    CHASE<-QEdata %>%
+      group_by(Waterbody) %>%
+      summarise(ConSum=max(ConSum, na.rm = TRUE),Sed=sum(IsSed, na.rm = TRUE),
+                Biota=max(IsBiota, na.rm = TRUE),ConfScore=mean(ConfScore, na.rm = TRUE))
+    
+    #CHASE$Waterbody<-NULL
+    CHASEQE<-QEdata %>%
+      select(Waterbody,Matrix,ConSum,QEStatus) %>%
+      inner_join(CHASE, by=c("Waterbody"="Waterbody","ConSum"="ConSum"))
+    
     CHASEQE<-rename(CHASEQE,Status=QEStatus,Worst=Matrix)
     
-    assessmentdata<-left_join(assessmentdata,QEdata,c('Waterbody','Matrix'))
+    CHASEQE$ConfMultiplier<-ifelse(CHASEQE$Sed+CHASEQE$Biota>0,1,0.5)
+    CHASEQE$ConfScore<-CHASEQE$ConfScore*CHASEQE$ConfMultiplier
+    
+    CHASEQE$Confidence<-mapply(ConfidenceStatus,CHASEQE$ConfScore,TRUE)
+      
+    CHASEQE<-CHASEQE %>%
+      select(Waterbody,Worst,ConSum,Status,ConfScore,Confidence)
+    
+    assessmentdata<-assessmentdata %>%
+      select(Waterbody,Matrix,Substance,Type,Threshold,Status,Units,CR,ConfThresh,ConfStatus,ConfScore) %>%
+      left_join(rename(QEdataOut,QEConfidence=Confidence,QEConfScore=ConfScore),c('Waterbody','Matrix'))
+    #assessmentdata<-assessmentdata %>%
+    #  left_join(rename(QEdataOut,QEConfidence=Confidence,QEConfScore=ConfScore),c('Waterbody','Matrix'))
+    
     QEspr<-inner_join(QEspr, CHASEQE, 'Waterbody')
     
     for(j in 1:nextra){
@@ -106,11 +173,13 @@ Assessment<- function(assessmentdata,summarylevel=1){
       }
     }
     
+    
+    
     #return(n)
     if(summarylevel==2){
       return(QEspr)
     }else if(summarylevel==3){
-      return(QEdata)
+      return(QEdataOut)
     }else if(summarylevel==4){
       return(CHASEQE)
     }else{
@@ -137,14 +206,25 @@ ContaminationRatio<- function(threshold, status, response=1){
 
 #===============================================================================
 #Function CHASEStatus
-CHASEStatus<-function(CRsum){
+CHASEStatus<-function(CRsum,nCat=5){
+  if(nCat==5){
+    status<-ifelse(CRsum>0.5, "Good", "High")
+    status<-ifelse(CRsum>1, "Moderate", status)
+    status<-ifelse(CRsum>5, "Poor", status)
+    status<-ifelse(CRsum>10, "Bad",status )
+  }else{
+    status<-ifelse(CRsum>1, "Not good","Good")
+  }
+  return(status)
+}
+
+CHASEStatus1<-function(CRsum){
   status<-ifelse(CRsum>0.5, "Good", "High")
   status<-ifelse(CRsum>1, "Moderate", status)
   status<-ifelse(CRsum>5, "Poor", status)
   status<-ifelse(CRsum>10, "Bad",status )
   return(status)
 }
-
 # Colours associated with Status classes - used by Shiny App
 AddColours<-function(CRsum){
   co<-ifelse(CRsum>0.5, '#66FF66', '#3399FF')
@@ -162,7 +242,111 @@ Threshold <- function(substance){
   return(value)
 }
 
+# Function to calculate numeric confidence from string --------------------------------------------------------------------
+# The function will always return a numeric value between 0 and 1, depending on the argument sConf
+# Given a numeric argument between 0 and 1, the function returns the same value
+# e.g. ConfValue(0.37) returns a value of 0.37
+# Passing a numeric argument less than 0, the function returns a value of 0
+# Passing a numeric argument greater than 1, the function returns a value of 1
+# The function recognizes the following words and returns the respective values:
+#    High = 1.0
+#    Intermediate = 0.5
+#    Medium = 0.5
+#    Moderate = 0.5
+#    Low = 0.0
+# The function is case-insensitive.
+# Starting from the leftmost characte, the function recognizes any part of the key words
+# e.g. "H", "hi", "hig" will all result in a value of 1.0
+#      "med", "m", "int", "I", "in" will all return values of 0.5
+#      "lo", "l" will all give a value of 0.0
+#
+# Any other argument passed to the function will give a result equal to the argument NAvalue (default=0)
+
+ConfValue<-function(sConf,NAvalue=NA){
+  if(is.numeric(sConf)){
+    return(sConf)
+  }else{
+    sConf<-tolower(sConf)
+    l<-nchar(sConf)
+    if(l<1){
+      return(NAvalue)
+    }else{
+      desc<-c("low          ","intermediate","medium          ","moderate          ","high          ")
+      value<-c(0,0.5,0.5,0.5,1)
+      df<-data.frame(desc,value)
+      df$desc<-substr(df$desc, 1, l)
+      if(sConf %in% df$desc){
+        n<-df$value[df$desc==sConf][1]
+        return(n)
+      }else{
+        n<-suppressWarnings((as.numeric(sConf)))
+        if(is.na(n)){
+          n = NAvalue
+        }else{
+          n=min(1,max(0,n))
+        }
+        return(n)
+      }
+    }
+  }
+}
+
+Confidence<-function(Confidence1,Confidence2,Confidence3){
+  n1=lapply(Confidence1,ConfValue)
+  n2=lapply(Confidence2,ConfValue)
+  if(missing(Confidence3)){
+    n=mapply(ConfAvg, n1, n2)
+  }else{
+    n3=lapply(Confidence3,ConfValue)
+    n=mapply(ConfAvg, n1, n2, n3)
+  }
+  return(n)
+}
+
+ConfAvg<-function(C1,C2,C3){
+  if(missing(C3)){
+    n=(C1+C2)/2
+  }else{
+    n=(C1+C2+C3)/3
+  }
+  return(n)
+}
+
+ConfidenceS<-function(arrayConf){
+  arrayConf<-sapply(arrayConf, ConfValue)
+  return(arrayConf)
+}
+
+ConfidenceStatus<-function(Score,Roman=FALSE){
+  Status<-ifelse(Roman==TRUE,
+                 ifelse(Score<0.5,"Class III",
+                        ifelse(Score<0.75,"Class II","Class I")),
+                 ifelse(Score<0.5,"Low",
+                        ifelse(Score<0.75,"Medium","High"))
+  )
+  return(Status)
+}
 
 
 
+IsHeavyMetal<-function(sType,NAvalue=NA){
+  n<-NAvalue
+  if(regexpr("hm",sType,ignore.case=TRUE)>0){
+      n<-1
+    }
+  if(regexpr("heavy",sType,ignore.case=TRUE)>0){
+    n<-1
+  }
+  return(n)
+}
 
+IsOrganic<-function(sType,NAvalue=NA){
+  n<-NAvalue
+  if(regexpr("organ",sType,ignore.case=TRUE)>0){
+    n<-1
+  }
+  if(regexpr("org",sType,ignore.case=TRUE)>0){
+    n<-1
+  }
+  return(n)
+}
