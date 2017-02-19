@@ -5,13 +5,21 @@ library("tidyr")
 # function Assessment
 Assessment<- function(assessmentdata,summarylevel=1){
   
+  # Get column names from the input data
+  cnames<-names(assessmentdata)
   
-  requiredcols <- c("Matrix","Substance","Threshold","Status")
-  extracols <- c("Waterbody","Response","Type","ConfThreshold","ConfStatus")
+  # If CR is not included, then Threshold and Status are required columns
+  if('CR' %in% toupper(cnames)){
+    UserCR=TRUE
+    requiredcols <- c("Matrix","Substance")
+  }else{
+    UserCR=FALSE
+    requiredcols <- c("Matrix","Substance","Threshold","Status")
+  }
   
+  extracols <- c("Waterbody","Response","Type","Confidence")
   
   #Check column names in the imported data
-  cnames<-names(assessmentdata)
   nimp = ncol(assessmentdata)
   nreq = length(requiredcols)
   nextra = length(extracols)
@@ -19,6 +27,7 @@ Assessment<- function(assessmentdata,summarylevel=1){
   ok <- rep(0, nreq)
   okextra <- rep(0, nextra)
   foundresponse=FALSE
+  
   
   for (i in 1:nimp){
     for (j in 1:nreq){
@@ -37,8 +46,8 @@ Assessment<- function(assessmentdata,summarylevel=1){
   
   for(j in 1:nextra){
     if(okextra[j]==0){
-      if(regexpr("confidence",extracols[j],ignore.case=TRUE)>0){
-        assessmentdata[[extracols[j]]]<-0
+      if(regexpr("Confidence",extracols[j],ignore.case=TRUE)>0){
+        assessmentdata[[extracols[j]]]<-'Low'
       }else{
         assessmentdata[[extracols[j]]]<-1
       }
@@ -52,7 +61,7 @@ Assessment<- function(assessmentdata,summarylevel=1){
     message("Error in CHASE Assessment. Required column(s) were not found in the input data:")
     for (j in 1:nreq){
       if(ok[j]!=1){
-        message(paste("    ",requiredcols[j]))
+        cat(paste0("    ",requiredcols[j]),"\n")
       }
     }
     return(NA)
@@ -77,9 +86,10 @@ Assessment<- function(assessmentdata,summarylevel=1){
     names(matrices)[1] <- 'Waterbody'
     names(matrices)[2] <- 'Matrix'
     
-    
-    assessmentdata$CR<-ContaminationRatio(assessmentdata$Threshold,assessmentdata$Status,assessmentdata$Response)
-    assessmentdata$ConfScore<-Confidence(assessmentdata$ConfStatus,assessmentdata$ConfThreshold)
+    if(UserCR==FALSE){
+      assessmentdata$CR<-ContaminationRatio(assessmentdata$Threshold,assessmentdata$Status,assessmentdata$Response)
+    }
+    assessmentdata$ConfScore<-mapply(ConfValue,assessmentdata$Confidence)
     
     # Add columns specifying if the inidcator is an organic or heavy metal. Used in confidence penalty calculations
     assessmentdata$HM<-mapply(IsHeavyMetal,assessmentdata$Type)
@@ -91,16 +101,17 @@ Assessment<- function(assessmentdata,summarylevel=1){
     MatchListSed<-c("sediment","sed","sedi")
     
     QEtypeCount<-assessmentdata %>%
-      filter(!is.na(Type)) %>%
+      filter(!is.na(Type),!is.na(CR)) %>%
       group_by(Waterbody,Matrix,Type) %>%
       summarise(Count=n()) 
     
     QEdata<-assessmentdata %>%
+      filter(!is.na(CR)) %>%
       group_by(Waterbody,Matrix) %>%
       summarise(sumCR=sum(CR,na.rm = TRUE),
                 sumConf=sum(ConfScore,na.rm = TRUE), 
                 countHM=sum(HM,na.rm = TRUE), 
-                countOrg=sum(Org,na.rm = TRUE), 
+                countOrg=sum(Org,na.rm = TRUE),
                 Count=n()) %>%
       ungroup()
     
@@ -158,24 +169,17 @@ Assessment<- function(assessmentdata,summarylevel=1){
     CHASEQE<-CHASEQE %>%
       select(Waterbody,Worst,ConSum,Status,ConfScore,Confidence)
     
+    assessmentdata$HM<-NULL
+    assessmentdata$Org<-NULL
+    if(!'RESPONSE' %in% toupper(cnames)){
+      assessmentdata$Response<-NULL
+    }
+    
     assessmentdata<-assessmentdata %>%
-      select(Waterbody,Matrix,Substance,Type,Threshold,Status,Units,CR,ConfThresh,ConfStatus,ConfScore) %>%
       left_join(rename(QEdataOut,QEConfidence=Confidence,QEConfScore=ConfScore),c('Waterbody','Matrix'))
-    #assessmentdata<-assessmentdata %>%
-    #  left_join(rename(QEdataOut,QEConfidence=Confidence,QEConfScore=ConfScore),c('Waterbody','Matrix'))
     
     QEspr<-inner_join(QEspr, CHASEQE, 'Waterbody')
     
-    for(j in 1:nextra){
-      if(extracols[j]=='Waterbody' & okextra[j]==0){
-        #assessmentdata[[extracols[j]]]<-NULL
-        #QEdata[[extracols[j]]]<-NULL
-      }
-    }
-    
-    
-    
-    #return(n)
     if(summarylevel==2){
       return(QEspr)
     }else if(summarylevel==3){
@@ -184,6 +188,7 @@ Assessment<- function(assessmentdata,summarylevel=1){
       return(CHASEQE)
     }else{
       return(assessmentdata)
+      #return()
     }
     #
   }
@@ -281,9 +286,9 @@ ConfValue<-function(sConf,NAvalue=NA){
       }else{
         n<-suppressWarnings((as.numeric(sConf)))
         if(is.na(n)){
-          n = NAvalue
+          n<-NAvalue
         }else{
-          n=min(1,max(0,n))
+          n<-min(1,max(0,n))
         }
         return(n)
       }
@@ -292,13 +297,19 @@ ConfValue<-function(sConf,NAvalue=NA){
 }
 
 Confidence<-function(Confidence1,Confidence2,Confidence3){
-  n1=lapply(Confidence1,ConfValue)
-  n2=lapply(Confidence2,ConfValue)
-  if(missing(Confidence3)){
-    n=mapply(ConfAvg, n1, n2)
+  n1<-lapply(Confidence1,ConfValue)
+  if(missing(Confidence2)){
+    
+    n<-n1
   }else{
-    n3=lapply(Confidence3,ConfValue)
-    n=mapply(ConfAvg, n1, n2, n3)
+    
+    n2<-lapply(Confidence2,ConfValue)
+    if(missing(Confidence3)){
+      n<-mapply(ConfAvg, n1, n2)
+    }else{
+      n3<-lapply(Confidence3,ConfValue)
+      n<-mapply(ConfAvg, n1, n2, n3)
+    }
   }
   return(n)
 }

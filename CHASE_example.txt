@@ -1,0 +1,78 @@
+Waterbody;Matrix;Substance;Type;Threshold;Status;Confidence
+37-30;Sediment;Anthracene;Org;85;2.3;M
+37-30;Sediment;Benzo(ghi]perylene;Org;85;41.6;L
+37-30;Sediment;Benzo[a]anthracene;Org;261;23.6;M
+37-30;Sediment;Benzo[a]pyrene;Org;430;31.8;L
+37-30;Sediment;Dibenzotiophene;Org;190;3.6;M
+37-30;Sediment;Fluoranthene;Org;600;60.9;L
+37-30;Sediment;Fluorene, sediment;Org;19;60.9;M
+37-30;Sediment;Indeno[1,2,3-cd]pyrene;Org;240;76.2;L
+37-30;Sediment;Naphtalene;Org;160;14.8;L
+37-30;Sediment;Phenathrene;Org;240;39.9;L
+37-30;Sediment;Pyrene;Org;665;59.8;L
+37-30;Sediment;CB101;Org;3;0.188;L
+37-30;Sediment;CB118;Org;0.6;0.18;L
+37-30;Sediment;CB138;Org;7.9;0.29;L
+37-30;Sediment;CB153;Org;40;0.35;L
+37-30;Sediment;CB180;Org;12;0.12;L
+37-30;Sediment;CB28;Org;1.7;0.11;L
+37-30;Sediment;CB52;Org;2.7;0.06;L
+37-30;Sediment;Cd;HM;1.2;0.236742424242424;M
+37-30;Sediment;Cr;HM;81;46.3068181818182;M
+37-30;Sediment;Cu;HM;34;11.4583333333333;M
+37-30;Sediment;Pb;HM;47;17.8977272727273;M
+37-30;Sediment;Zn;HM;150;108.238636363636;M
+37-30;Sediment;Hg;HM;0.15;0.0606060606060606;M
+37-30;Sediment;HCHG, sediment;Org;3;0.06;M
+37-30;Sediment;TBT, sediment;Org;0.8;2.18181818181818;M
+37-30;Biota;Anthracene,mussel;Org;290;3.125;M
+37-30;Biota;benzo(b,k)fluoranthen, mussel;Org;5;1.5;M
+37-30;Biota;Benzo(ghi]perylene,mussel;Org;5;0.81;M
+37-30;Biota;Benzo[a]anthracene,mussel;Org;80;3.125;M
+37-30;Biota;Benzo[a]pyrene,mussel;Org;5;0.58;M
+37-30;Biota;Fluoranthene,mussel;Org;30;2.07;M
+37-30;Biota;Indeno[1,2,3-cd]pyrene,mussel;Org;5;0.83;M
+37-30;Biota;Naphtalene,mussel;Org;340;1.61;M
+37-30;Biota;Phenathrene,mussel;Org;1700;19.90625;M
+37-30;Biota;Pyrene,mussel;Org;100;12.5;M
+37-30;Biota;CB101,mussel;Org;6;0.240625;M
+37-30;Biota;CB118,mussel;Org;1.2;0.375;M
+37-30;Biota;CB138,mussel;Org;15.8;0.453125;M
+37-30;Biota;CB153,mussel;Org;80;0.6875;M
+37-30;Biota;CB180,mussel;Org;24;0.146875;M
+37-30;Biota;CB28,mussel;Org;3.2;0.16875;M
+37-30;Biota;CB52,mussel;Org;5.4;0.0875;M
+37-30;Biota;DDEPP(mussel);Org;10;0.1235;M
+37-30;Biota;HCHG(mussel);Org;1.45;0.975;M
+37-30;Biota;TBT, mussel - not fish;Org;12;2.04;M
+37-30;Biological Effects;VDSI(Neptunea,Nucella);Org;2; ;M
+37-30;Biological Effects;VDSI(Buccinum,Nassarius) - not Littorina;Org;0.3; ;M
+37-32;Sediment;Anthracene;Org;85;1;M
+37-32;Sediment;Benzo(ghi]perylene;Org;85;2.3;M
+37-32;Sediment;Benzo[a]anthracene;Org;261;2.1;M
+37-32;Sediment;Benzo[a]pyrene;Org;430;3.5;M
+37-32;Sediment;Dibenzotiophene;Org;190;0.5;M
+37-32;Sediment;Fluoranthene;Org;600;2;M
+37-32;Sediment;Fluorene, sediment;Org;19;2;M
+37-32;Sediment;Indeno[1,2,3-cd]pyrene;Org;240;2;M
+37-32;Sediment;Naphtalene;Org;160;3.3;M
+37-32;Sediment;Phenathrene;Org;240;1;M
+37-32;Sediment;Pyrene;Org;665;1.7;M
+37-32;Sediment;Cd;HM;1.2;0.101351351351351;M
+37-32;Sediment;Cr;HM;81;91.554054054054;M
+37-32;Sediment;Cu;HM;34;6.08108108108108;M
+37-32;Sediment;Pb;HM;47;29.7297297297297;M
+37-32;Sediment;Zn;HM;150;77.7027027027027;M
+37-32;Sediment;Hg;HM;0.15;0.027027027027027;M
+37-32;Sediment;TBT, sediment;Org;0.8;2.4;M
+37-32;Biota;Anthracene,mussel;Org;290;3.125;M
+37-32;Biota;benzo(b,k)fluoranthen, mussel;Org;5;0.96;M
+37-32;Biota;Benzo(ghi]perylene,mussel;Org;5;0.5;M
+37-32;Biota;Benzo[a]anthracene,mussel;Org;80;3.125;M
+37-32;Biota;Benzo[a]pyrene,mussel;Org;5;0.83;M
+37-32;Biota;Fluoranthene,mussel;Org;30;2.91;M
+37-32;Biota;Indeno[1,2,3-cd]pyrene,mussel;Org;5;0.77;M
+37-32;Biota;Naphtalene,mussel;Org;340;0.5;M
+37-32;Biota;Phenathrene,mussel;Org;1700;16.5;M
+37-32;Biota;Pyrene,mussel;Org;100;12.5625;M
+37-32;Biota;TBT, mussel - not fish;Org;12;2.88;M

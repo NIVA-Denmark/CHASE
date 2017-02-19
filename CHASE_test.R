@@ -6,17 +6,21 @@ library(ggplot2)
 # required colums:
 #         Matrix
 #         Substance
-#         Threshold
-#         Status
 #
 # optional colums:
 #         Response
 #         Type
-#         ConfThresh
-#         ConfStatus
+#         Confidence
+#         Threshold
+#         Status
+#         CR
+
+# IF CR (Contamination ratio) is provided then Threshold and Status are not necessary
+# If CR is not provided, then Threshold and Status are required
+# If all 3 are provided, the user-specified CR value will override the vale from Threshold/Status
 
 
-filename<-'./example_assessment.csv'
+filename<-'./CHASE_example_CR.txt'
 assessmentdata<-read.csv(filename, header = TRUE,  sep=";")
 
 out<-Assessment(assessmentdata)     #Individual indicator results
