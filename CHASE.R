@@ -5,6 +5,13 @@ library("tidyr")
 # function Assessment
 Assessment<- function(assessmentdata,summarylevel=1){
   
+  # Confidence Penalty Criteria (minimum numbers of indicators)
+  CountHM<-2
+  CountOrg<-3
+  PenaltyHM<-0.5
+  PenaltyOrg<-0.5
+  
+  
   # Get column names from the input data
   cnames<-names(assessmentdata)
   
@@ -100,10 +107,28 @@ Assessment<- function(assessmentdata,summarylevel=1){
     MatchListBiota<-c("biota","biot")
     MatchListSed<-c("sediment","sed","sedi")
     
+    # Count the number of distinct indicators in each category (type) HM and Org 
     QEtypeCount<-assessmentdata %>%
       filter(!is.na(Type),!is.na(CR)) %>%
-      group_by(Waterbody,Matrix,Type) %>%
-      summarise(Count=n()) 
+      group_by(Waterbody,Matrix,Type,Substance) %>%
+      summarise(Count=n()) %>%
+      ungroup %>%
+      group_by(Waterbody,Type) %>%
+      summarise(Count=n()) %>%
+      spread(Type,Count)
+    
+    if(is.null(QEtypeCount$HM)){
+      QEtypeCount$HM<-0.0
+    }
+    if(is.null(QEtypeCount$Org)){
+      QEtypeCount$Org<-0.0
+    }
+    
+    QEtypeCount$HM_OK<-ifelse(QEtypeCount$HM<CountHM,FALSE,TRUE)
+    QEtypeCount$Org_OK<-ifelse(QEtypeCount$Org<CountOrg,FALSE,TRUE)
+    QEtypeCount$Penalty<-(1-((1-PenaltyHM*(!QEtypeCount$HM_OK))*(1-PenaltyOrg*(!QEtypeCount$Org_OK))))
+    QEtypeCount$HM_OK<-NULL
+    QEtypeCount$Org_OK<-NULL
     
     QEdata<-assessmentdata %>%
       filter(!is.na(CR)) %>%
@@ -116,16 +141,18 @@ Assessment<- function(assessmentdata,summarylevel=1){
       ungroup()
     
     
-    #QEdata$ConSum<-QEdata$sumCR/sqrt(QEdata$Count)
     QEdata$IsBio<-ifelse(tolower(QEdata$Matrix) %in% MatchListBioEffects,TRUE,FALSE)
     QEdata$IsBiota<-ifelse(tolower(QEdata$Matrix) %in% MatchListBiota,TRUE,FALSE)
     QEdata$IsSed<-ifelse(tolower(QEdata$Matrix) %in% MatchListSed,TRUE,FALSE)
     QEdata$ConSum<-QEdata$sumCR/ifelse(QEdata$IsBio,QEdata$Count,sqrt(QEdata$Count))
     
-    QEdata$MultiplierHM<-ifelse(QEdata$countHM>0,1,0.75)
-    QEdata$MultiplierOrg<-ifelse(QEdata$countOrg>0,1,0.75)
-    QEdata$ConfScore<-ifelse(QEdata$IsBiota==TRUE||QEdata$IsSed==TRUE,
-                             QEdata$MultiplierHM*QEdata$MultiplierOrg,1)*QEdata$sumConf/QEdata$Count
+    #Confidence penalty 'alternative' 1 - not used
+    #QEdata$MultiplierHM<-ifelse(QEdata$countHM>0,1,0.75)
+    #QEdata$MultiplierOrg<-ifelse(QEdata$countOrg>0,1,0.75)
+    #QEdata$ConfScore<-ifelse(QEdata$IsBiota==TRUE||QEdata$IsSed==TRUE,
+    #                         QEdata$MultiplierHM*QEdata$MultiplierOrg,1)*QEdata$sumConf/QEdata$Count
+    
+    QEdata$ConfScore<-QEdata$sumConf/QEdata$Count
     
     QEdata$Confidence<-mapply(ConfidenceStatus,QEdata$ConfScore,TRUE)
     QEdata$MultiplierHM<-NULL
@@ -134,14 +161,10 @@ Assessment<- function(assessmentdata,summarylevel=1){
     QEdata$IsBio<-NULL   
     QEdata$sumCR <- NULL
     QEdata$Count <- NULL
-    
-    
       
     QEspr<-QEdata %>%
       select(Waterbody,Matrix,ConSum) %>%
       spread(Matrix,ConSum)
-    
-    QEspr1<-QEspr
     
     QEdata$QEStatus<-CHASEStatus(QEdata$ConSum,2)
     QEdata<-left_join(matrices,QEdata,c('Waterbody','Matrix'))
@@ -154,7 +177,6 @@ Assessment<- function(assessmentdata,summarylevel=1){
       summarise(ConSum=max(ConSum, na.rm = TRUE),Sed=sum(IsSed, na.rm = TRUE),
                 Biota=max(IsBiota, na.rm = TRUE),ConfScore=mean(ConfScore, na.rm = TRUE))
     
-    #CHASE$Waterbody<-NULL
     CHASEQE<-QEdata %>%
       select(Waterbody,Matrix,ConSum,QEStatus) %>%
       inner_join(CHASE, by=c("Waterbody"="Waterbody","ConSum"="ConSum"))
@@ -164,10 +186,15 @@ Assessment<- function(assessmentdata,summarylevel=1){
     CHASEQE$ConfMultiplier<-ifelse(CHASEQE$Sed+CHASEQE$Biota>0,1,0.5)
     CHASEQE$ConfScore<-CHASEQE$ConfScore*CHASEQE$ConfMultiplier
     
-    CHASEQE$Confidence<-mapply(ConfidenceStatus,CHASEQE$ConfScore,TRUE)
+    CHASEQE$Confidence<-NA
       
     CHASEQE<-CHASEQE %>%
-      select(Waterbody,Worst,ConSum,Status,ConfScore,Confidence)
+      select(Waterbody,Worst,ConSum,Status,ConfScore,Confidence) %>%
+      left_join(QEtypeCount,by=c("Waterbody"="Waterbody"))
+    
+    CHASEQE$ConfScore<-CHASEQE$ConfScore*(1-CHASEQE$Penalty)
+    CHASEQE$Confidence<-mapply(ConfidenceStatus,CHASEQE$ConfScore,TRUE)
+    CHASEQE$Penalty<-scales::percent(CHASEQE$Penalty) 
     
     assessmentdata$HM<-NULL
     assessmentdata$Org<-NULL
