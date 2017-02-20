@@ -108,14 +108,17 @@ Assessment<- function(assessmentdata,summarylevel=1){
     MatchListSed<-c("sediment","sed","sedi")
     
     # Count the number of distinct indicators in each category (type) HM and Org 
-    QEtypeCount<-assessmentdata %>%
+    DistinctIndicators<-assessmentdata %>%
       filter(!is.na(Type),!is.na(CR)) %>%
       group_by(Waterbody,Matrix,Type,Substance) %>%
       summarise(Count=n()) %>%
-      ungroup %>%
-      group_by(Waterbody,Type) %>%
-      summarise(Count=n()) %>%
-      spread(Type,Count)
+      ungroup 
+    DistinctIndicators$HM<-mapply(IsHeavyMetal,DistinctIndicators$Type)
+    DistinctIndicators$Org<-mapply(IsOrganic,DistinctIndicators$Type)
+    
+    QEtypeCount<-DistinctIndicators %>%
+      group_by(Waterbody) %>%
+      summarise(HM=sum(HM,na.rm=TRUE),Org=sum(Org,na.rm=TRUE))
     
     if(is.null(QEtypeCount$HM)){
       QEtypeCount$HM<-0.0
