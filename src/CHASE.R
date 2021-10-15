@@ -153,17 +153,11 @@ Assessment <- function(assessmentdata,
     # if not supplied directily, calculate ConfSpatial from 
     # Grids, GridsAssessed, Stations, Area_km2
     if (UserConfSpatial == FALSE) {
-      assessmentdata$ConfSpatial <-
-        SpatialConfidence(assessmentdata$Grids,
-                           assessmentdata$GridsAssessed,
-                           assessmentdata$Stations,
-                          assessmentdata$Area_km2)
+      assessmentdata <- assessmentdata %>%
+        rowwise() %>%
+        mutate(ConfSpatial=SpatialConfidence(Grids,GridsAssessed,Stations,Area_km2))
     }
     
-    
-    assessmentdata <- assessmentdata %>%
-      rowwise() %>%
-      mutate(ConfSpatial=SpatialConfidence(Grids,GridsAssessed,Stations,Area_km2))
      
     # calculate numerical values for each confidence rating
     assessmentdata <- assessmentdata %>%
