@@ -1,0 +1,104 @@
+# read L3 assessment data
+
+file3 <- "../data HOLAS II/assessmentdata.csv"
+df3 <- read.table(file3,sep=";",header=T)
+df3 <- df3 %>%
+  mutate(CR=as.numeric(str_replace(CR,",",".")))
+
+
+# WB area km2
+filebasins <- "../data HOLAS II/subbasins.txt"
+dfb <- read.table(filebasins,sep=",",header=T,fileEncoding="UTF-8") 
+
+# read mapping from L3 to L4
+file <- "./input/mapping_L3_L4.csv"
+mapping_L3_L4 <- read.table(file,sep=";",header=T)
+
+# ------------------------
+dfb1 <- dfb %>%
+  select(Code_scale4=HELCOM_ID,Area_km2) 
+
+dfb2 <- dfb %>%
+  filter(country=="Opensea") %>%
+  select(Waterbody=Name,Area_km2) %>%
+  mutate(Waterbody=paste0(str_replace(Waterbody,"Opensea ","")," - open sea")) %>%
+  mutate(Waterbody=str_trim(Waterbody))
+  
+dfb1 <- dfb1 %>%
+  left_join(mapping_L3_L4,by="Code_scale4")
+
+dfb1 <- dfb1 %>%
+  filter(!is.na(Name_scale3)) %>%
+  group_by(Name_scale3) %>%
+  summarise(Area_km2=sum(Area_km2,na.rm=T)) %>%
+  ungroup() %>%
+  rename(Waterbody=Name_scale3)
+  
+dfb3 <- bind_rows(dfb1,dfb2) 
+# ------------------------
+
+df3 <- df3 %>%
+  rename(ConfAcc=ConfStatus) %>%
+  mutate(ConfTemp = ifelse(tolower(Datatype)=="initial","M","H"))
+
+
+
+
+df4 <- mapping_L3_L4 %>%
+  rename(Waterbody=Name_scale3) %>%
+  left_join(df3,by="Waterbody") 
+
+df4 <- df4 %>%  
+  rename(WaterbodyL3=Waterbody)%>%
+  rename(Waterbody=Code_scale4)
+
+
+# add areas to L3
+
+df3 <- df3 %>%
+  left_join(dfb3,by="Waterbody") %>%
+  mutate(Area_km2 = ifelse(is.na(Area_km2),999,Area_km2)) %>%
+  mutate(Grids=as.integer(round(Area_km2 / 30,digits=0)))
+
+
+# L3 Grids, GridsAssessed, Stations, Area_km2
+df3$GridsAssessed <- runif(nrow(df3), min=0, max=0.15)
+df3$Stations <- runif(nrow(df3), min=0, max=1)
+df3 <- df3 %>%
+  mutate(GridsAssessed=as.integer(round(GridsAssessed*Grids,digits=0))) %>%
+  mutate(Stations = as.integer(round(Stations* Area_km2/200,digits=0))) %>%
+  mutate(Stations=ifelse(Stations<1,1,Stations))
+
+# L3 Grids, GridsAssessed, Stations, Area_km2
+df4 <- df4 %>%
+  left_join(select(dfb,Waterbody=HELCOM_ID,Area_km2),by="Waterbody")%>%
+  mutate(Area_km2 = ifelse(is.na(Area_km2),999,Area_km2)) %>%
+  mutate(Grids=as.integer(round(Area_km2 / 30,digits=0)))
+
+df4$GridsAssessed <- runif(nrow(df4), min=0, max=0.15)
+df4$Stations <- runif(nrow(df4), min=0, max=1)
+df4 <- df4 %>%
+  mutate(GridsAssessed=as.integer(round(GridsAssessed*Grids,digits=0))) %>%
+  mutate(Stations = as.integer(round(Stations* Area_km2/200,digits=0))) %>%
+  mutate(Stations=ifelse(Stations<1,1,Stations))
+
+
+# add missing confidence to df3 and df4
+# "ConfTemp","ConfSpatial","ConfAcc","ConfMethod","ConfThresh"
+
+confnames <- c("ConfSpatial","ConfMethod")
+conf<-c("L","M","H")
+
+for(i in confnames){
+  df3[,i]<-round(runif(nrow(df3), min=0.5, max=3.49999))
+  df3[,i] <- conf[df3[,i]]
+  df4[,i]<-round(runif(nrow(df4), min=0.5, max=3.49999))
+  df4[,i] <- conf[df4[,i]]
+}
+
+
+file3 <- "./input/assessmentdata_holas_ii.csv"
+write.table(df3,file=file3,sep=";",row.names=F,col.names=T,quote=T)
+file4 <- "./input/assessmentdata_holas_ii_L4.csv"
+write.table(df4,file=file4,sep=";",row.names=F,col.names=T,quote=T)
+

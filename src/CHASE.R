@@ -4,8 +4,12 @@ library("tidyr")
 #===============================================================================
 # function Assessment
 Assessment <- function(assessmentdata, 
-                       summarylevel = NA, 
-                       doConfidence=T) {
+                       summarylevel=NA,
+                       StatusClasses=5,
+                       ndigits=3) {
+  
+  # CHASE status classes
+  # the default is 5 (High, Good, Moderate, Poor, Bad)
   
   # Confidence Penalty Criteria (minimum numbers of indicators)
   CountHM <- 2
@@ -21,11 +25,12 @@ Assessment <- function(assessmentdata,
   ConfWeightThresh = 0.15
   
   
+  
   # Get column names from the input data
   cnames <- names(assessmentdata)
   
-  requiredcols <- c("Matrix","Substance","Type",
-                    "ConfTemp","ConfSpatial","ConfAcc","ConfMethod","ConfThresh")
+  # list of required columns
+  requiredcols <- c("Matrix","Substance","Type")
   
   # If CR is not included, then Threshold and Status are required columns
   if ('CR' %in% toupper(cnames)) {
@@ -35,7 +40,28 @@ Assessment <- function(assessmentdata,
     requiredcols <- c(requiredcols,"Threshold","Status")
   }
   
-  extracols <- c("Waterbody","Response","nStations","nDat")
+  
+  # If ConfSpatial is not included, then we need information to calculate Spatial confidence:
+  # number of grids
+  # number of grids assessed
+  # number of stations
+  # area km2
+  
+  if (toupper('ConfSpatial') %in% toupper(cnames)) {
+    UserConfSpatial = TRUE
+    extracolsConf <- c("ConfTemp","ConfSpatial",
+                       "ConfAcc","ConfMethod","ConfThresh")
+  } else{
+    UserConfSpatial = FALSE
+    requiredcols <- c(requiredcols,c("Grids","GridsAssessed","Stations","Area_km2"))
+    extracolsConf <- c("ConfTemp",
+                       "ConfAcc","ConfMethod","ConfThresh")
+  }
+
+  # extra columns - if missing valiues will be assumed for these columns
+  #                 and we can still do the assessment
+  extracols <- c("Waterbody","Response",
+                 extracolsConf)
   
   #Check column names in the imported data
   nimp = ncol(assessmentdata)
@@ -62,12 +88,17 @@ Assessment <- function(assessmentdata,
     }
   }
   
+  # if any of the optional columns are missing, add them to the dataframe
   for (j in 1:nextra) {
     if (okextra[j] == 0) {
-      if (regexpr("Confidence", extracols[j], ignore.case = TRUE) > 0) {
-        assessmentdata[[extracols[j]]] <- 'Low'
+      if (toupper(extracols[j]) %in% toupper(extracolsConf)) {
+        assessmentdata[[extracols[j]]] <- 'L'
       } else{
-        assessmentdata[[extracols[j]]] <- 1
+        if(tolower(extracols[j])=="waterbody"){
+          assessmentdata[[extracols[j]]] <- "Whole assessment"
+        }else{
+          assessmentdata[[extracols[j]]] <- 1
+        }
       }
     }
   }
@@ -75,7 +106,7 @@ Assessment <- function(assessmentdata,
   n <- sum(ok, na.rm = TRUE)
   
   if (n < nreq) {
-    # The required columns were not found in the input data
+    # Some of the required columns were not found in the input data
     message("Error in CHASE Assessment. Required column(s) were not found in the input data:")
     for (j in 1:nreq) {
       if (ok[j] != 1) {
@@ -90,16 +121,21 @@ Assessment <- function(assessmentdata,
     # Change order of matrices factors
     mat1 <- data.frame(unique(assessmentdata$Matrix))
     names(mat1)[1] <- 'Matrix'
-    mat1$char <- as.character(mat1$Matrix)
-    mat1$len <- nchar(mat1$char)
-    mat1 <- arrange(mat1, len)
+    
+    matorder<-c("w","s","b")
+    # preferred order is water, sediment, biota
+    
+    mat1 <- mat1 %>%
+      mutate(char=tolower(substr(as.character(Matrix),1,1))) %>%
+      mutate(n=match(char,matorder)) %>%
+      arrange(desc(n))
     
     assessmentdata$Matrix <-
-      factor(assessmentdata$Matrix, levels = mat1$char)
+      factor(assessmentdata$Matrix, levels = mat1$Matrix)
     
     # All combinations of matrices and waterbodies
-    # This is used to ensure that a NA is returned 
-    # where the combinations are missing
+    # This is used later to ensure that a NA is 
+    # returned where a combination is missing
     waterbodies <- unique(assessmentdata$Waterbody)
     matrices <- unique(assessmentdata$Matrix)
     matrices <- expand.grid(waterbodies, matrices)
@@ -112,17 +148,34 @@ Assessment <- function(assessmentdata,
                            assessmentdata$Status,
                            assessmentdata$Response)
     }
+
+   # SpatialConfidence
+    # if not supplied directily, calculate ConfSpatial from 
+    # Grids, GridsAssessed, Stations, Area_km2
+    if (UserConfSpatial == FALSE) {
+      assessmentdata$ConfSpatial <-
+        SpatialConfidence(assessmentdata$Grids,
+                           assessmentdata$GridsAssessed,
+                           assessmentdata$Stations,
+                          assessmentdata$Area_km2)
+    }
     
-    # group by 
     
-    # calculate indicator confidence
+    assessmentdata <- assessmentdata %>%
+      rowwise() %>%
+      mutate(ConfSpatial=SpatialConfidence(Grids,GridsAssessed,Stations,Area_km2))
+     
+    # calculate numerical values for each confidence rating
+    assessmentdata <- assessmentdata %>%
+      rowwise() %>%
+      mutate(ConfScoreTemp=ConfValue(ConfTemp),
+             ConfScoreSpatial=ConfValue(ConfSpatial),
+             ConfScoreAcc=ConfValue(ConfAcc),
+             ConfScoreMethod=ConfValue(ConfMethod),
+             ConfScoreThresh=ConfValue(ConfThresh))
     
-    assessmentdata$ConfScoreTemp <- mapply(ConfValue, assessmentdata$ConfTemp)
-    assessmentdata$ConfScoreSpatial <- mapply(ConfValue, assessmentdata$ConfSpatial)
-    assessmentdata$ConfScoreAcc <- mapply(ConfValue, assessmentdata$ConfAcc)
-    assessmentdata$ConfScoreMethod <- mapply(ConfValue, assessmentdata$ConfMethod)
-    assessmentdata$ConfScoreThresh <- mapply(ConfValue, assessmentdata$ConfThresh)
-    
+
+    # calculate overall indicator confidence
     assessmentdata <- assessmentdata %>%
       mutate(ConfScore = ConfWeightTemp*ConfScoreTemp + 
                ConfWeightSpatial*ConfScoreSpatial +
@@ -133,10 +186,12 @@ Assessment <- function(assessmentdata,
     assessmentdata <- assessmentdata %>% 
       select(-c(ConfScoreTemp,ConfScoreSpatial,ConfScoreAcc,ConfScoreMethod,ConfScoreThresh))
  
-    # Add columns specifying if the inidcator is an organic or heavy metal. Used in confidence penalty calculations
-    assessmentdata$HM<-mapply(IsHeavyMetal,assessmentdata$Type)
-    assessmentdata$Org<-mapply(IsOrganic,assessmentdata$Type)
-    
+    # Add columns specifying if the indicator is an organic or heavy metal. Used in confidence penalty calculations
+    assessmentdata <- assessmentdata %>%
+      rowwise() %>%
+      mutate(HM=IsHeavyMetal(Type),
+             Org=IsOrganic(Type))
+
     MatchListBioEffects <-
       c(
         "bioeffect",
@@ -184,7 +239,7 @@ Assessment <- function(assessmentdata,
       select(Waterbody,HM,Org,Penalty)
     
     
-    
+    # calculate results by waterbody and matrix
     QEdata <- assessmentdata %>%
       filter(!is.na(CR)) %>%
       group_by(Waterbody, Matrix) %>%
@@ -197,11 +252,13 @@ Assessment <- function(assessmentdata,
       ) %>%
       ungroup()
     
-    
+    # calculate results by waterbody and matrix
     QEdata$IsBio <-
       ifelse(tolower(QEdata$Matrix) %in% MatchListBioEffects,
              TRUE,
              FALSE)
+    
+    # for Bio Effects the simple average of CR is used, rather than sum(CR)/sqrt(n)
     QEdata$IsBiota <-
       ifelse(tolower(QEdata$Matrix) %in% MatchListBiota, TRUE, FALSE)
     QEdata$IsSed <-
@@ -213,23 +270,31 @@ Assessment <- function(assessmentdata,
     
     QEdata$Confidence <-
       mapply(ConfidenceStatus, QEdata$ConfScore, TRUE)
-    QEdata$MultiplierHM <- NULL
-    QEdata$MultiplierOrg <- NULL
-    QEdata$sumConf <- NULL
-    QEdata$IsBio <- NULL
-    QEdata$sumCR <- NULL
-    QEdata$Count <- NULL
     
+    # do some rounding of confidence scores
+    if(is.numeric(ndigits)){
+      QEdata <- QEdata %>%
+        mutate(ConSum=round(ConSum,digits=ndigits))
+    }
+    
+    # for results per waterbody and matrix, transpose to wide form, with each Matrix in a separate column
     QEspr <- QEdata %>%
       select(Waterbody, Matrix, ConSum) %>%
-      spread(Matrix, ConSum)
+      pivot_wider(names_from="Matrix", values_from="ConSum")
     
-    QEdata$QEStatus <- CHASEStatus(QEdata$ConSum, 2)
+    QEdata$QEStatus <- CHASEStatus(QEdata$ConSum, StatusClasses)
     QEdata <- left_join(matrices, QEdata, c('Waterbody', 'Matrix'))
-    QEdata <- arrange(QEdata, Waterbody, Matrix)
+    QEdata <- QEdata %>%
+      arrange(Waterbody, Matrix)
+    
+      
     QEdataOut <- QEdata %>%
       select(Waterbody, Matrix, ConSum, QEStatus, ConfScore, Confidence)
     
+    # Get the maximum value of ConSum per waterbody
+    # also get counts of IsSed and IsBiota for each waterbody
+    # these will be used later to apply a penalty to confidence if 
+    # the waterbody does not have data for at least one of the two matrices
     CHASE <- QEdata %>%
       group_by(Waterbody) %>%
       summarise(
@@ -239,9 +304,21 @@ Assessment <- function(assessmentdata,
         ConfScore = mean(ConfScore, na.rm = TRUE)
       )
     
+    # Join the max value of ConSum in each waterbody to the Matrix having that value
+    # if two matrices have the same worst value of ConSum, we will now have two matches for the relevant waterbody
     CHASEQE <- QEdata %>%
       select(Waterbody, Matrix, ConSum, QEStatus) %>%
       inner_join(CHASE, by = c("Waterbody" = "Waterbody", "ConSum" = "ConSum"))
+    
+    # take the first Matrix having the worst (greatest) value of ConSum (in the order biota, sediment, water)
+    CHASEQE <- CHASEQE %>%
+      group_by(Waterbody) %>%
+      arrange(Matrix) %>%
+      slice(1) %>%
+      ungroup()
+
+    CHASEQE %>% group_by(Waterbody) %>% summarise(n=n()) %>% ungroup() %>% filter(n>1)
+    
     
     CHASEQE <- rename(CHASEQE, Status = QEStatus, Worst = Matrix)
     
@@ -278,6 +355,18 @@ Assessment <- function(assessmentdata,
     
     QEspr <- inner_join(QEspr, CHASEQE, 'Waterbody')
     
+    # do some rounding of confidence scores
+    if(is.numeric(ndigits)){
+      CHASEQE <- CHASEQE %>%
+        mutate(ConfScore=round(ConfScore,digits=ndigits))
+      QEdataOut <- QEdataOut %>%
+        mutate(ConfScore=round(ConfScore,digits=ndigits))
+      QEspr <- QEspr %>%
+        mutate(ConfScore=round(ConfScore,digits=ndigits))
+    }
+    
+    
+    
     if(is.na(summarylevel)){
       # return a list with results at 4 summary levels
       CHASE <- list(
@@ -301,48 +390,3 @@ Assessment <- function(assessmentdata,
 }
 
 
-#===============================================================================
-# function ContaminationRatio
-ContaminationRatio <- function(threshold, status, response = 1) {
-  # If response is not specified, it will be assumed to be positive
-  # i.e. ContaminationRatio increases (worsens) with increasing status value
-  if (missing(response)) {
-    response = 1
-  }
-  response <- ifelse(is.na(response), 1, response)
-  
-  # ContaminationRatio calculated depending on Response direction
-  cr <- ifelse(response > 0, status / threshold, threshold / status)
-  return(cr)
-}
-
-#===============================================================================
-#Function CHASEStatus
-CHASEStatus <- function(CRsum, nCat = 5) {
-  if (nCat == 5) {
-    status <- ifelse(CRsum > 0.5, "Good", "High")
-    status <- ifelse(CRsum > 1, "Moderate", status)
-    status <- ifelse(CRsum > 5, "Poor", status)
-    status <- ifelse(CRsum > 10, "Bad", status)
-  } else{
-    status <- ifelse(CRsum > 1, "Not good", "Good")
-  }
-  return(status)
-}
-
-CHASEStatus1 <- function(CRsum) {
-  status <- ifelse(CRsum > 0.5, "Good", "High")
-  status <- ifelse(CRsum > 1, "Moderate", status)
-  status <- ifelse(CRsum > 5, "Poor", status)
-  status <- ifelse(CRsum > 10, "Bad", status)
-  return(status)
-}
-
-# Colours associated with Status classes - used by Shiny App
-AddColours <- function(CRsum) {
-  co <- ifelse(CRsum > 0.5, '#66FF66', '#3399FF')
-  co <- ifelse(CRsum > 1, '#FFFF66', co)
-  co <- ifelse(CRsum > 5, '#FF9933', co)
-  co <- ifelse(CRsum > 10, '#FF6600', co)
-  return(co)
-}
