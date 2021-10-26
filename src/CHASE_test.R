@@ -21,12 +21,12 @@ p4 <- ggplot(resL4) +
   geom_histogram(aes(x=ConfScore),binwidth=0.02) +
   theme_minimal()
 p4
-ggsave(p4,file="output/hist_L4.png",dpi=100,units="cm",height=10,width=10)
 p3 <- ggplot(resL3) +
   geom_histogram(aes(x=ConfScore),binwidth=0.02) +
   theme_minimal()
 p3
-ggsave(p3,file="output/hist_L3.png",dpi=100,units="cm",height=10,width=10)
+ggsave(p4,file="output/hist_L4.png",dpi=300,units="cm",height=15,width=15)
+ggsave(p3,file="output/hist_L3.png",dpi=300,units="cm",height=15,width=15)
 
 
 
