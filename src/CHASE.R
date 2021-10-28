@@ -3,13 +3,24 @@ library("tidyr")
 
 #===============================================================================
 # function Assessment
+
+# input:
+
+#     assessmentdata (required): data frame containing the following columns
+
+
+#     summarylevel: deault 
+#     StatusClasses: number of status classes to be used 
+#       CHASE status classes
+#       the default is 5 (High, Good, Moderate, Poor, Bad)
+
+
+
 Assessment <- function(assessmentdata, 
                        summarylevel=NA,
                        StatusClasses=5,
                        ndigits=3) {
   
-  # CHASE status classes
-  # the default is 5 (High, Good, Moderate, Poor, Bad)
   
   # Confidence Penalty Criteria (minimum numbers of indicators)
   CountHM <- 2
@@ -178,7 +189,7 @@ Assessment <- function(assessmentdata,
                ConfWeightThresh*ConfScoreThresh)
     
     assessmentdata <- assessmentdata %>% 
-      select(-c(ConfScoreTemp,ConfScoreSpatial,ConfScoreAcc,ConfScoreMethod,ConfScoreThresh))
+      dplyr::select(-c(ConfScoreTemp,ConfScoreSpatial,ConfScoreAcc,ConfScoreMethod,ConfScoreThresh))
  
     # Add columns specifying if the indicator is an organic or heavy metal. Used in confidence penalty calculations
     assessmentdata <- assessmentdata %>%
@@ -198,7 +209,8 @@ Assessment <- function(assessmentdata,
     MatchListBiota <- c("biota", "biot")
     MatchListSed <- c("sediment", "sed", "sedi")
     
-    # counting substances in different matrices as distinct (used for Org)
+    # counting substances in different matrices as distinct (not currently used - kept for information)
+    # these will be compared with CountHM and CountOrg
     IndicatorCountByMatrix <- assessmentdata %>%
       filter(!is.na(Type), !is.na(CR)) %>%
       group_by(Waterbody, Matrix, Type, Substance) %>%
@@ -209,10 +221,11 @@ Assessment <- function(assessmentdata,
       group_by(Waterbody, Type) %>%
       summarise(Count = sum(Count,na.rm=T)) %>%
       pivot_wider(names_from="Type",values_from="Count")  %>%
-      select(Waterbody,Org)
+      dplyr::select(Waterbody) # replace with e.g. select(Waterbody,HM) if heavy metals in separate matrices count twice
+
       
-    # not counting same substances in different matrices as extra (used for HM)
-    IndicatorCount <- assessmentdata %>%
+    # counting substances where the same substance in different matrices counts only once 
+    IndicatorCountByWB <- assessmentdata %>%
       filter(!is.na(Type), !is.na(CR)) %>%
       group_by(Waterbody, Type, Substance) %>%
       summarise() %>%
@@ -220,17 +233,17 @@ Assessment <- function(assessmentdata,
       group_by(Waterbody, Type) %>%
       summarise(Count = n()) %>%
       pivot_wider(names_from="Type",values_from="Count") %>%
-      select(Waterbody,HM)
-    
-    # calculate the confidence penalties where counts of Org and HM are below the limits
+      dplyr::select(Waterbody,Org,HM)
+
+    # calculate the confidence penalties where counts of Org and HM are below the limits CountOrg and CountHM
     QEtypeCount <-  IndicatorCountByMatrix %>% 
-      left_join(IndicatorCount,by="Waterbody") %>%
+      left_join(IndicatorCountByWB,by="Waterbody") %>%
       mutate(HM=ifelse(is.na(HM),0,HM),
              Org=ifelse(is.na(Org),0,Org)) %>%
       mutate(PenaltyHM=ifelse(HM<CountHM,PenaltyHM,0),
              PenaltyOrg=ifelse(Org<CountOrg,PenaltyOrg,0)) %>%
-      mutate(Penalty=(1-PenaltyOrg)*(1-PenaltyHM)) %>%
-      select(Waterbody,HM,Org,Penalty)
+      mutate(Penalty=1-((1-PenaltyOrg)*(1-PenaltyHM))) %>%
+      dplyr::select(Waterbody,HM,Org,Penalty)
     
     
     # calculate results by waterbody and matrix
@@ -273,7 +286,7 @@ Assessment <- function(assessmentdata,
     
     # for results per waterbody and matrix, transpose to wide form, with each Matrix in a separate column
     QEspr <- QEdata %>%
-      select(Waterbody, Matrix, ConSum) %>%
+      dplyr::select(Waterbody, Matrix, ConSum) %>%
       pivot_wider(names_from="Matrix", values_from="ConSum")
     
     QEdata$QEStatus <- CHASEStatus(QEdata$ConSum, StatusClasses)
@@ -283,7 +296,7 @@ Assessment <- function(assessmentdata,
     
       
     QEdataOut <- QEdata %>%
-      select(Waterbody, Matrix, ConSum, QEStatus, ConfScore, Confidence)
+      dplyr::select(Waterbody, Matrix, ConSum, QEStatus, ConfScore, Confidence)
     
     # Get the maximum value of ConSum per waterbody
     # also get counts of IsSed and IsBiota for each waterbody
@@ -301,21 +314,22 @@ Assessment <- function(assessmentdata,
     # Join the max value of ConSum in each waterbody to the Matrix having that value
     # if two matrices have the same worst value of ConSum, we will now have two matches for the relevant waterbody
     CHASEQE <- QEdata %>%
-      select(Waterbody, Matrix, ConSum, QEStatus) %>%
+      dplyr::select(Waterbody, Matrix, ConSum, QEStatus) %>%
       inner_join(CHASE, by = c("Waterbody" = "Waterbody", "ConSum" = "ConSum"))
     
-    # take the first Matrix having the worst (greatest) value of ConSum (in the order biota, sediment, water)
+    # for each waterbody, take the first Matrix having the worst (greatest) 
+    # value of ConSum (in the order biota, sediment, water)
     CHASEQE <- CHASEQE %>%
       group_by(Waterbody) %>%
       arrange(Matrix) %>%
       slice(1) %>%
       ungroup()
 
-    CHASEQE %>% group_by(Waterbody) %>% summarise(n=n()) %>% ungroup() %>% filter(n>1)
-    
-    
+    # we now have dataframe of the worst QE for each waterbody
     CHASEQE <- rename(CHASEQE, Status = QEStatus, Worst = Matrix)
-    
+   
+    # if there is not at least one of Biota or Sediment matrices included,
+    # then confidence for the waterbody is reduced by 50% (multiply by 0.5)
     CHASEQE$ConfMultiplier <-
       ifelse(CHASEQE$Sed + CHASEQE$Biota > 0, 1, 0.5)
     CHASEQE$ConfScore <- CHASEQE$ConfScore * CHASEQE$ConfMultiplier
@@ -323,12 +337,15 @@ Assessment <- function(assessmentdata,
     CHASEQE$Confidence <- NA
     
     CHASEQE <- CHASEQE %>%
-      select(Waterbody, Worst, ConSum, Status, ConfScore, Confidence) %>%
+      dplyr::select(Waterbody, Worst, ConSum, Status, ConfScore, Confidence) %>%
       left_join(QEtypeCount, by = c("Waterbody" = "Waterbody"))
     
     CHASEQE$ConfScore <- CHASEQE$ConfScore * (1 - CHASEQE$Penalty)
     CHASEQE$Confidence <-
       mapply(ConfidenceStatus, CHASEQE$ConfScore, TRUE)
+    
+    
+    # 
     CHASEQE$Penalty <- scales::percent(CHASEQE$Penalty)
     
     assessmentdata$HM <- NULL
@@ -349,7 +366,7 @@ Assessment <- function(assessmentdata,
     
     QEspr <- inner_join(QEspr, CHASEQE, 'Waterbody')
     
-    # do some rounding of confidence scores
+    # do rounding of confidence scores
     if(is.numeric(ndigits)){
       CHASEQE <- CHASEQE %>%
         mutate(ConfScore=round(ConfScore,digits=ndigits))
@@ -360,14 +377,13 @@ Assessment <- function(assessmentdata,
     }
     
     
-    
     if(is.na(summarylevel)){
-      # return a list with results at 4 summary levels
+      # return a list with results at all 4 summary levels
       CHASE <- list(
-        "Indicator"=assessmentdata,
+        "Indicators"=assessmentdata,
         "Matrix by column"=QEspr,
         "Matrix by row"=QEdataOut,
-        "Waterbody"=CHASEQE
+        "Waterbodies"=CHASEQE
       )
       return(CHASE)
     } else if(summarylevel == 1) {
