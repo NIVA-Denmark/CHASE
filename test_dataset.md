@@ -143,6 +143,9 @@ indicator belongs to. There will be one dataframe for intersection with
 Level 3 assessment units and another dataframe for Level 4 assessment
 units.
 
+*As can be seen from the map, some station positions should be checked.
+This is outside the scope of this test.*
+
 ``` r
  df3 <- st_intersection(df_sf, units3)
  df4 <- st_intersection(df_sf, units4)
@@ -152,7 +155,7 @@ units.
  df4$geometry <-NULL
 
  # show the head for Level 3 data
- head(df3)
+ print(head(df3))
 ```
 
     ##         Station Matrix Substance Type          CR Units Response ConfThresh
@@ -287,13 +290,16 @@ Original source for threshold confidence data is Table 2 in this meeting
 document:
 <https://portal.helcom.fi/meetings/HOLAS%20II%20HZ%20WS%201-2018-518/MeetingDocuments/2-3%20Confidence%20setting%20for%20CHASE%20integrated%20assessment.pdf>
 
-Join threshold confidences to L3 and L4 indicator tables *(this is not
-run because *ConfThresh* is already included in the indicator data)*
+Join threshold confidences to L3 and L4 indicator tables.
+
+*Note: the following code block is not run because **ConfThresh** is
+already included in the indicator data.*
 
 ``` r
+# NOT RUN!
 df3 <- df3 %>%
   left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
-  mutate(AU_scale=3) 
+  mutate(AU_scale=3)
 
 df4 <- df4 %>%
   left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
