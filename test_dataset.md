@@ -126,7 +126,36 @@ about the assessment units
 ``` r
  df3 <- st_intersection(df_sf, units3)
  df4 <- st_intersection(df_sf, units4)
+ 
+ # geometry information is no longer needed
+ df3$geometry <-NULL
+ df4$geometry <-NULL
+
+ # show the head for Level 3 data
+ head(df3)
 ```
+
+    ##           region country             station         stationName determinand
+    ## 892 Bothnian Bay Finland            Hailuoto            Hailuoto        SBD6
+    ## 893 Bothnian Bay Finland            Hailuoto            Hailuoto        SCB6
+    ## 894 Bothnian Bay Finland            Hailuoto            Hailuoto          HG
+    ## 901 Bothnian Bay Finland         Iso-Huituri         Iso-Huituri          HG
+    ## 909 Bothnian Bay Finland Kalajokisuun edusta Kalajokisuun edusta          HG
+    ## 910 Bothnian Bay Finland Kalajokisuun edusta Kalajokisuun edusta        HBCD
+    ##            detGroup      meanLY      HQS Contamination.ratio HELCOM_ID
+    ## 892 Organo-bromines   1.8604651   0.0085        2.188782e+02         1
+    ## 893 Chlorobiphenyls  10.1162791  75.0000        1.348837e-01         1
+    ## 894          Metals  85.7232129  20.0000        4.286161e+00         1
+    ## 901          Metals 239.1652149  20.0000        1.195826e+01         1
+    ## 909          Metals 120.0000000  20.0000        6.000000e+00         1
+    ## 910 Organo-bromines   0.6088708 167.0000        3.645933e-03         1
+    ##                                 level_3
+    ## 892 Bothnian Bay Finnish Coastal waters
+    ## 893 Bothnian Bay Finnish Coastal waters
+    ## 894 Bothnian Bay Finnish Coastal waters
+    ## 901 Bothnian Bay Finnish Coastal waters
+    ## 909 Bothnian Bay Finnish Coastal waters
+    ## 910 Bothnian Bay Finnish Coastal waters
 
 Save the indicator data, now including information on which assessment
 units they belong to

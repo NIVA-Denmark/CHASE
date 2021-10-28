@@ -116,10 +116,15 @@ Intersect the indicator data points with the polygons to add information about t
  df3 <- st_intersection(df_sf, units3)
  df4 <- st_intersection(df_sf, units4)
  
+ # geometry information is no longer needed
+ df3$geometry <-NULL
+ df4$geometry <-NULL
+
+ # show the head for Level 3 data
+ head(df3)
 ```
 Save the indicator data, now including information on which assessment units they belong to
 ```{r save data, warning=FALSE}
-
 write.table(df3,file="./input/assessmentdata_L3.csv",sep=";",row.names=F,col.names=T,quote=T)
 write.table(df4,file="./input/assessmentdata_L4.csv",sep=";",row.names=F,col.names=T,quote=T)
  
