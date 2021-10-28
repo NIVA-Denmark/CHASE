@@ -1,18 +1,25 @@
-CHASE description of test dataset
+CHASE test dataset
 ================
-NIVA Denmark
+<cjm@niva-dk.dk>
 28/10/2021
 
+## Development of two indicator datasets for testing the CHASE assessment tool
+
+This document describes the development of datasets for testing the
+CHASE assessment tool. By modifying the steps below or by using
+different sources of data, alternative datasets can be created for input
+to the CHASE assessment tool.
+
+This could also serve as a model for development the actual assessment
+as well. However, in order to do this, a number of issues should be
+addressed, not limited to:
+
+-   Determination of the temporal confidence should to be included. At
+    present random values are used.
+-   Determination of the methodological confidence should be included.
+    This is also represented by random values at present.
+
 ## Data sources
-
-This development of a dataset for testing the CHASE assessment tool
-could serve as a model for developing the actual assessment. In order a
-number of issues should be addressed, not limited to:
-
--   Determination of the temporal confidence would be have to be
-    included. (Currently random values are used).
--   Determination of the methodological confidence would be have to be
-    included. (also random values at present).
 
 For testing purposes, we used indicator data from the HOLAS II
 assessment. This data was available with indicators per station. The
@@ -23,16 +30,16 @@ Using shape files for level 3 assessment units and level 4 assessment
 units, we mapped the station positions to assessment units, creating two
 input data sets for the CHASE assessment:
 
-1.  [assessmentdata_holas_ii.csv](input/assessmentdata_holas_ii.csv)
+1.  [input/assessmentdata_L3.csv](input/assessmentdata_L3.csv)
 
-2.  [assessmentdata_holas_ii_L4.csv](input/assessmentdata_holas_ii_L4.csv)
+2.  [input/assessmentdata_L4.csv](input/assessmentdata_L4.csv)
 
-### Shape files
+#### Shape files
 
-The shapes files used were downloaded from the HELCOM maps and data
-service (MADS):
+The shapes files for assessment units were downloaded from the HELCOM
+maps and data service (MADS).
 
-Level 3:
+Level 3 :
 <https://maps.helcom.fi/website/MADS/download/?id=e5a59af9-c244-4069-9752-be3acc5dabed>
 
 Level 4:
@@ -51,7 +58,8 @@ units3 <- read_sf(dsn = "../gis/_ags_HELCOM_subbasins_with_coastal_and_offshore_
                   layer = "HELCOM_subbasins_with_coastal_and_offshore_division_2018_1")
 
 units3 <- units3 %>%
-  dplyr::select(HELCOM_ID,level_3,Area_km2=area_km2)
+  dplyr::select(HELCOM_ID,level_3,Area_km2=area_km2) 
+# note: change name of variable area_km2 for consistency
 
 st_write(units3, "assessment_units/AssessmentUnits3.shp",append=F)
 
@@ -88,6 +96,7 @@ map3 <- ggplot() +
   theme_minimal(base_size=9) +
   ggtitle("Level 3 Assessment Units") +
   geom_sf(data=units3, colour="black", fill=NA)
+
 map4 <- ggplot() +
   theme_minimal(base_size=9) + 
   ggtitle("Level 4 Assessment Units") +
@@ -99,7 +108,7 @@ map3+map4
 ![](test_dataset_files/figure-gfm/read%20shape%20files-1.png)<!-- -->
 
 Read indicator data from text file
-[holas_ii_indicators_by_station.txt](input/holas_ii_indicators_by_station.txt)
+[input/holas_ii_indicators_by_station.txt](input/holas_ii_indicators_by_station.txt)
 
 ``` r
 file <- "input/holas_ii_indicators_by_station.txt"
@@ -108,7 +117,11 @@ df <- read.table(file,sep="\t",
                  header=T,
                  fileEncoding="UTF-8",
                  comment.char="")
+```
 
+Rename columns in indicator data to match CHASE input requirements
+
+``` r
 df <- df %>%
   rename(Substance=determinand,
          Type=detGroup,
@@ -135,8 +148,11 @@ ggplot() +
 
 ![](test_dataset_files/figure-gfm/indicators%20to%20sf-1.png)<!-- -->
 
-Intersect the indicator data points with the polygons to add information
-about the assessment units
+Intersect the indicator data points with the polygons to get dataframes
+of indicators with added information about which assessment unit each
+indicator belongs to. There will be one dataframe for intersection with
+Level 3 assessment units and another dataframe for Level 4 assessment
+units.
 
 ``` r
  df3 <- st_intersection(df_sf, units3)
@@ -171,6 +187,10 @@ about the assessment units
     ## 901 Bothnian Bay Finnish Coastal waters 5548.123
     ## 909 Bothnian Bay Finnish Coastal waters 5548.123
     ## 910 Bothnian Bay Finnish Coastal waters 5548.123
+
+## Further processing, incl. confidences
+
+#### Spatial confidence
 
 Add counts of stations and observations
 
@@ -214,8 +234,13 @@ df4 <- df4 %>%
   left_join(data_count4,by=c("HELCOM_ID","Name","Matrix","Substance"))
 ```
 
-Add spatial confidence based on km2 per sample ‘\<500 km2 per sample:
-High ’500 - 5000 km2 per sample: Moderate’\>5000 km2 per sample: Low
+Add spatial confidence based on km<sup>2</sup> per sample
+
+| km<sup>2</sup> per sample | Confidence |
+|---------------------------|------------|
+| \<500                     | High       |
+| 500 - 5000                | Moderate   |
+| \> 5000                   | Low        |
 
 ``` r
 km2perSampleBounds<-c(500,5000)
@@ -239,7 +264,10 @@ df4 <- df4 %>%
   dplyr::select(-ix)
 ```
 
-Load table of confidences for threshold values
+#### Threshold confidence
+
+Load table of confidences for threshold values from text file
+[input/confidence_thresholds.txt](./input/confidence_thresholds.txt)
 
 ``` r
 dfConfThreshold <- read.table("./input/confidence_thresholds.txt",sep=";",header=T) 
@@ -272,6 +300,10 @@ print(dfConfThreshold)
     ## 22           VDS Bio. Effects          M matrix changed to bio. effects CJM
     ## 23        PYR1OH Bio. Effects          M                       added by CJM
 
+Original source for threshold confidence data is Table 2 in this meeting
+document:
+<https://portal.helcom.fi/meetings/HOLAS%20II%20HZ%20WS%201-2018-518/MeetingDocuments/2-3%20Confidence%20setting%20for%20CHASE%20integrated%20assessment.pdf>
+
 Join threshold confidences to L3 and L4 indicator tables
 
 ``` r
@@ -283,6 +315,8 @@ df4 <- df4 %>%
   left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
   mutate(AU_scale=4)
 ```
+
+#### Methodological confidence
 
 Add random confidences for method to L3 and L4 indicator tables
 
@@ -301,6 +335,8 @@ df4 <- df4 %>%
   mutate(ConfMethod=conf[ConfMethod]) %>%
   ungroup()
 ```
+
+#### Temporal confidence
 
 Add random temporal confidences to L3 and L4 indicator tables
 
@@ -335,12 +371,24 @@ df4 <- df4 %>%
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 ```
 
-Save the indicator data, including \* information on which assessment
-units they belong to \* threshold confidence \* method confidence \*
-number of stations in AU \* number of data points per km2 \* spatial
-confidence \* temporal confidence
+#### Save test datasets
+
+Save the indicator data, including
+
+-   information on which assessment units they belong to
+-   threshold confidence \[H/M/L\]
+-   method confidence \[H/M/L\]
+-   number of stations in AU
+-   number of data points per km<sup>2</sup>
+-   spatial confidence \[H/M/L\]
+-   temporal confidence \[H/M/L\]
 
 ``` r
 write.table(df3,file="./input/assessmentdata_L3.csv",sep=";",row.names=F,col.names=T,quote=T)
 write.table(df4,file="./input/assessmentdata_L4.csv",sep=";",row.names=F,col.names=T,quote=T)
 ```
+
+This markdown document is created by knitting the RMarkdown file
+[test_dataset.Rmd](test_dataset.Rmd). The steps here for generating test
+data can be run without generating markdown, using the standalone R
+script [src/create_test_dataset.R](src/create_test_dataset.R)
