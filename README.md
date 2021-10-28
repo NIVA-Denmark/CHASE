@@ -12,3 +12,5 @@ http://link.springer.com/article/10.1007/s10661-016-5121-x
 For more information, contact cjm@niva-denmark.dk.
 
 [More details](CHASE.md)
+
+Read about creation of the test data set [here](test_dataset.md)
