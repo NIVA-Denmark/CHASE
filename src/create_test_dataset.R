@@ -206,12 +206,12 @@ df4 <- df4 %>%
 
 df3 <- df3 %>%
   mutate(AU_scale=3) %>%
-  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 df4 <- df4 %>%
   mutate(AU_scale=4) %>%
-  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 # Save the indicator data, including 

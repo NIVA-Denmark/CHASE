@@ -1,13 +1,14 @@
 ---
 title: "CHASE test dataset"
-author: "cjm@niva-dk.dk"
-date: "28/10/2021"
 output: github_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+[back to README](README.md)
+
 ## Development of two indicator datasets for testing the CHASE assessment tool
 
 This document describes the development of datasets for testing the CHASE assessment tool. By modifying the steps below or by using different sources of data, alternative datasets can be created for input to the CHASE assessment tool.
@@ -291,13 +292,13 @@ Select only columns needed
 ```{r select columns, warning=FALSE}
 df3 <- df3 %>%
   mutate(AU_scale=3) %>%
-  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 
 df4 <- df4 %>%
   mutate(AU_scale=4) %>%
-  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 ```
@@ -320,3 +321,9 @@ write.table(df4,file="./input/assessmentdata_L4.csv",sep=";",row.names=F,col.nam
  
 ```
 This markdown document is created by knitting the RMarkdown file [test_dataset.Rmd](test_dataset.Rmd). The steps here for generating test data can be run without generating markdown, using the standalone R script [src/create_test_dataset.R](src/create_test_dataset.R)
+
+Updated 28-10-2021 [cjm@niva-dk.dk](cjm@niva-dk.dk)
+
+[back to README](README.md)
+
+

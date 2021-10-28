@@ -9,7 +9,7 @@ Development of the Excel tool is described here:
 Andersen, J.H., Murray, C., Larsen, M.M. et al. Environ Monit Assess (2016) 188: 115.
 http://link.springer.com/article/10.1007/s10661-016-5121-x
 
-For more information, contact cjm@niva-denmark.dk.
+For more information, contact cjm@niva-dk.dk.
 
 [More details](CHASE.md)
 

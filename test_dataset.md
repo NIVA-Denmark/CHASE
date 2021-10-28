@@ -1,7 +1,7 @@
 CHASE test dataset
 ================
-<cjm@niva-dk.dk>
-28/10/2021
+
+[back to README](README.md)
 
 ## Development of two indicator datasets for testing the CHASE assessment tool
 
@@ -361,13 +361,13 @@ Select only columns needed
 ``` r
 df3 <- df3 %>%
   mutate(AU_scale=3) %>%
-  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 
 df4 <- df4 %>%
   mutate(AU_scale=4) %>%
-  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 ```
 
@@ -392,3 +392,7 @@ This markdown document is created by knitting the RMarkdown file
 [test_dataset.Rmd](test_dataset.Rmd). The steps here for generating test
 data can be run without generating markdown, using the standalone R
 script [src/create_test_dataset.R](src/create_test_dataset.R)
+
+Updated 28-10-2021 [cjm@niva-dk.dk](cjm@niva-dk.dk)
+
+[back to README](README.md)
