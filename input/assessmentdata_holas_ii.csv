@@ -1,4 +1,4 @@
-"Waterbody";"matrix";"substance";"Type";"CR";"Units";"Response";"ConfThresh";"ConfAcc";"Datatype";"ConfTemp";"Area_km2";"Stations";"GridsAssessed";"Grids";"ConfMethod"
+"AU";"matrix";"substance";"Type";"CR";"Units";"Response";"ConfThresh";"ConfAcc";"Datatype";"ConfTemp";"Area_km2";"Stations";"GridsAssessed";"Grids";"ConfMethod"
 "Archipelago Sea Coastal waters";"Biota";"SCB6";"Org";0.395419121;"ug/kg ww fish muscle";"+";"L";"H";"Full";"H";15801.627953195;2;2;527;"M"
 "Archipelago Sea Coastal waters";"Biota";"HG";"HM";6.62;"ug/kg ww whole fish";"+";"H";"L";"initial";"M";15801.627953195;10;7;527;"M"
 "Archipelago Sea Coastal waters";"Biota";"HG";"HM";10.91;"ug/kg ww whole fish";"+";"H";"L";"initial";"M";15801.627953195;10;7;527;"L"

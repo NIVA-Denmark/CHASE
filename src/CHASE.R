@@ -71,7 +71,7 @@ Assessment <- function(assessmentdata,
 
   # extra columns - if missing valiues will be assumed for these columns
   #                 and we can still do the assessment
-  extracols <- c("Waterbody","Response",
+  extracols <- c("AU","Response",
                  extracolsConf)
   
   #Check column names in the imported data
@@ -105,7 +105,7 @@ Assessment <- function(assessmentdata,
       if (toupper(extracols[j]) %in% toupper(extracolsConf)) {
         assessmentdata[[extracols[j]]] <- 'L'
       } else{
-        if(tolower(extracols[j])=="waterbody"){
+        if(tolower(extracols[j])=="au"){
           assessmentdata[[extracols[j]]] <- "Whole assessment"
         }else{
           assessmentdata[[extracols[j]]] <- 1
@@ -139,7 +139,7 @@ Assessment <- function(assessmentdata,
     mat1 <- mat1 %>%
       mutate(char=tolower(substr(as.character(Matrix),1,1))) %>%
       mutate(n=match(char,matorder)) %>%
-      arrange(desc(n))
+      arrange(desc(n),desc(char))
     
     assessmentdata$Matrix <-
       factor(assessmentdata$Matrix, levels = mat1$Matrix)
@@ -147,10 +147,10 @@ Assessment <- function(assessmentdata,
     # All combinations of matrices and waterbodies
     # This is used later to ensure that a NA is 
     # returned where a combination is missing
-    waterbodies <- unique(assessmentdata$Waterbody)
+    waterbodies <- unique(assessmentdata$AU)
     matrices <- unique(assessmentdata$Matrix)
     matrices <- expand.grid(waterbodies, matrices)
-    names(matrices)[1] <- 'Waterbody'
+    names(matrices)[1] <- 'AU'
     names(matrices)[2] <- 'Matrix'
     
     if (UserCR == FALSE) {
@@ -213,43 +213,43 @@ Assessment <- function(assessmentdata,
     # these will be compared with CountHM and CountOrg
     IndicatorCountByMatrix <- assessmentdata %>%
       filter(!is.na(Type), !is.na(CR)) %>%
-      group_by(Waterbody, Matrix, Type, Substance) %>%
+      group_by(AU, Matrix, Type, Substance) %>%
       summarise() %>%
       ungroup %>%
-      group_by(Waterbody, Matrix, Type) %>%
+      group_by(AU, Matrix, Type) %>%
       summarise(Count = n()) %>%
-      group_by(Waterbody, Type) %>%
+      group_by(AU, Type) %>%
       summarise(Count = sum(Count,na.rm=T)) %>%
       pivot_wider(names_from="Type",values_from="Count")  %>%
-      dplyr::select(Waterbody) # replace with e.g. select(Waterbody,HM) if heavy metals in separate matrices count twice
+      dplyr::select(AU) # replace with e.g. select(AU,HM) if heavy metals in separate matrices count twice
 
       
     # counting substances where the same substance in different matrices counts only once 
     IndicatorCountByWB <- assessmentdata %>%
       filter(!is.na(Type), !is.na(CR)) %>%
-      group_by(Waterbody, Type, Substance) %>%
+      group_by(AU, Type, Substance) %>%
       summarise() %>%
       ungroup  %>%
-      group_by(Waterbody, Type) %>%
+      group_by(AU, Type) %>%
       summarise(Count = n()) %>%
       pivot_wider(names_from="Type",values_from="Count") %>%
-      dplyr::select(Waterbody,Org,HM)
+      dplyr::select(AU,Org,HM)
 
     # calculate the confidence penalties where counts of Org and HM are below the limits CountOrg and CountHM
     QEtypeCount <-  IndicatorCountByMatrix %>% 
-      left_join(IndicatorCountByWB,by="Waterbody") %>%
+      left_join(IndicatorCountByWB,by="AU") %>%
       mutate(HM=ifelse(is.na(HM),0,HM),
              Org=ifelse(is.na(Org),0,Org)) %>%
       mutate(PenaltyHM=ifelse(HM<CountHM,PenaltyHM,0),
              PenaltyOrg=ifelse(Org<CountOrg,PenaltyOrg,0)) %>%
       mutate(Penalty=1-((1-PenaltyOrg)*(1-PenaltyHM))) %>%
-      dplyr::select(Waterbody,HM,Org,Penalty)
+      dplyr::select(AU,HM,Org,Penalty)
     
     
-    # calculate results by waterbody and matrix
+    # calculate results by AU and matrix
     QEdata <- assessmentdata %>%
       filter(!is.na(CR)) %>%
-      group_by(Waterbody, Matrix) %>%
+      group_by(AU, Matrix) %>%
       summarise(
         sumCR = sum(CR, na.rm = TRUE),
         sumConf = sum(ConfScore, na.rm = TRUE),
@@ -259,7 +259,7 @@ Assessment <- function(assessmentdata,
       ) %>%
       ungroup()
     
-    # calculate results by waterbody and matrix
+    # calculate results by AU and matrix
     QEdata$IsBio <-
       ifelse(tolower(QEdata$Matrix) %in% MatchListBioEffects,
              TRUE,
@@ -284,26 +284,26 @@ Assessment <- function(assessmentdata,
         mutate(ConSum=round(ConSum,digits=ndigits))
     }
     
-    # for results per waterbody and matrix, transpose to wide form, with each Matrix in a separate column
+    # for results per AU and matrix, transpose to wide form, with each Matrix in a separate column
     QEspr <- QEdata %>%
-      dplyr::select(Waterbody, Matrix, ConSum) %>%
+      dplyr::select(AU, Matrix, ConSum) %>%
       pivot_wider(names_from="Matrix", values_from="ConSum")
     
     QEdata$QEStatus <- CHASEStatus(QEdata$ConSum, StatusClasses)
-    QEdata <- left_join(matrices, QEdata, c('Waterbody', 'Matrix'))
+    QEdata <- left_join(matrices, QEdata, c('AU', 'Matrix'))
     QEdata <- QEdata %>%
-      arrange(Waterbody, Matrix)
+      arrange(AU, Matrix)
     
       
     QEdataOut <- QEdata %>%
-      dplyr::select(Waterbody, Matrix, ConSum, QEStatus, ConfScore, Confidence)
+      dplyr::select(AU, Matrix, ConSum, QEStatus, ConfScore, Confidence)
     
-    # Get the maximum value of ConSum per waterbody
-    # also get counts of IsSed and IsBiota for each waterbody
+    # Get the maximum value of ConSum per AU
+    # also get counts of IsSed and IsBiota for each AU
     # these will be used later to apply a penalty to confidence if 
-    # the waterbody does not have data for at least one of the two matrices
+    # the AU does not have data for at least one of the two matrices
     CHASE <- QEdata %>%
-      group_by(Waterbody) %>%
+      group_by(AU) %>%
       summarise(
         ConSum = max(ConSum, na.rm = TRUE),
         Sed = sum(IsSed, na.rm = TRUE),
@@ -311,25 +311,25 @@ Assessment <- function(assessmentdata,
         ConfScore = mean(ConfScore, na.rm = TRUE)
       )
     
-    # Join the max value of ConSum in each waterbody to the Matrix having that value
-    # if two matrices have the same worst value of ConSum, we will now have two matches for the relevant waterbody
+    # Join the max value of ConSum in each AU to the Matrix having that value
+    # if two matrices have the same worst value of ConSum, we will now have two matches for the relevant AU
     CHASEQE <- QEdata %>%
-      dplyr::select(Waterbody, Matrix, ConSum, QEStatus) %>%
-      inner_join(CHASE, by = c("Waterbody" = "Waterbody", "ConSum" = "ConSum"))
+      dplyr::select(AU, Matrix, ConSum, QEStatus) %>%
+      inner_join(CHASE, by = c("AU" = "AU", "ConSum" = "ConSum"))
     
-    # for each waterbody, take the first Matrix having the worst (greatest) 
+    # for each AU, take the first Matrix having the worst (greatest) 
     # value of ConSum (in the order biota, sediment, water)
     CHASEQE <- CHASEQE %>%
-      group_by(Waterbody) %>%
+      group_by(AU) %>%
       arrange(Matrix) %>%
       slice(1) %>%
       ungroup()
 
-    # we now have dataframe of the worst QE for each waterbody
+    # we now have dataframe of the worst QE for each AU
     CHASEQE <- rename(CHASEQE, Status = QEStatus, Worst = Matrix)
    
     # if there is not at least one of Biota or Sediment matrices included,
-    # then confidence for the waterbody is reduced by 50% (multiply by 0.5)
+    # then confidence for the AU is reduced by 50% (multiply by 0.5)
     CHASEQE$ConfMultiplier <-
       ifelse(CHASEQE$Sed + CHASEQE$Biota > 0, 1, 0.5)
     CHASEQE$ConfScore <- CHASEQE$ConfScore * CHASEQE$ConfMultiplier
@@ -337,8 +337,8 @@ Assessment <- function(assessmentdata,
     CHASEQE$Confidence <- NA
     
     CHASEQE <- CHASEQE %>%
-      dplyr::select(Waterbody, Worst, ConSum, Status, ConfScore, Confidence) %>%
-      left_join(QEtypeCount, by = c("Waterbody" = "Waterbody"))
+      dplyr::select(AU, Worst, ConSum, Status, ConfScore, Confidence) %>%
+      left_join(QEtypeCount, by = c("AU" = "AU"))
     
     CHASEQE$ConfScore <- CHASEQE$ConfScore * (1 - CHASEQE$Penalty)
     CHASEQE$Confidence <-
@@ -361,10 +361,10 @@ Assessment <- function(assessmentdata,
           QEConfidence = Confidence,
           QEConfScore = ConfScore
         ),
-        c('Waterbody', 'Matrix')
+        c('AU', 'Matrix')
       )
     
-    QEspr <- inner_join(QEspr, CHASEQE, 'Waterbody')
+    QEspr <- inner_join(QEspr, CHASEQE, 'AU')
     
     # do rounding of confidence scores
     if(is.numeric(ndigits)){

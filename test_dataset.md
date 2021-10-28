@@ -5,6 +5,15 @@ NIVA Denmark
 
 ## Data sources
 
+This development of a dataset for testing the CHASE assessment tool
+could serve as a model for developing the actual assessment. In order a
+number of issues should be addressed, not limited to:
+
+-   Determination of the temporal confidence would be have to be
+    included. (Currently random values are used).
+-   Determination of the methodological confidence would be have to be
+    included. (also random values at present).
+
 For testing purposes, we used indicator data from the HOLAS II
 assessment. This data was available with indicators per station. The
 indicator data came from the file **CHASEinput060318.xlsx** sheet **By
@@ -29,10 +38,10 @@ Level 3:
 Level 4:
 <https://maps.helcom.fi/website/MADS/download/?id=67d653b1-aad1-4af4-920e-0683af3c4a48>
 
-The original shape files contain several columns, including polygon
-area, etc. For the purpose of these tests, we are only interested in the
-names of the assessment units. They were therefore modified using the
-following code, to reduce their size.
+The original shape files contain several columns which are not required.
+For the purpose of these tests, we are only interested in the names of
+the assessment units and area in km<sup>2</sup>. They were therefore
+modified using the following code, to reduce their size.
 
 ``` r
 library(tidyverse)
@@ -42,7 +51,7 @@ units3 <- read_sf(dsn = "../gis/_ags_HELCOM_subbasins_with_coastal_and_offshore_
                   layer = "HELCOM_subbasins_with_coastal_and_offshore_division_2018_1")
 
 units3 <- units3 %>%
-  dplyr::select(HELCOM_ID,level_3)
+  dplyr::select(HELCOM_ID,level_3,Area_km2=area_km2)
 
 st_write(units3, "assessment_units/AssessmentUnits3.shp",append=F)
 
@@ -50,8 +59,7 @@ units4 <- read_sf(dsn = "../gis/_ags_HELCOM_subbasins_with_coastal_WFD_waterbodi
                   layer = "HELCOM_subbasins_with_coastal_WFD_waterbodies_or_watertypes_2018_1")
 
 units4 <- units4 %>%
-  dplyr::select(Name,HELCOM_ID) %>%
-  filter(!is.na(HELCOM_ID))
+  dplyr::select(Name,HELCOM_ID,Area_km2)
 
 st_write(units4, "assessment_units/AssessmentUnits4.shp",append=F)
 ```
@@ -63,7 +71,7 @@ Load packages
 ``` r
 library(sf)
 library(tidyverse)
-library(patchwork)
+library(patchwork) # not essential - this is used only to combine the two maps of assessment units
 ```
 
 Load shape files for assessment units
@@ -100,6 +108,13 @@ df <- read.table(file,sep="\t",
                  header=T,
                  fileEncoding="UTF-8",
                  comment.char="")
+
+df <- df %>%
+  rename(Substance=determinand,
+         Type=detGroup,
+         Threshold=HQS,
+         Status=meanLY,
+         CR=Contamination.ratio)
 ```
 
 Convert indicator data frame to simple features
@@ -135,30 +150,195 @@ about the assessment units
  head(df3)
 ```
 
-    ##           region country             station         stationName determinand
-    ## 892 Bothnian Bay Finland            Hailuoto            Hailuoto        SBD6
-    ## 893 Bothnian Bay Finland            Hailuoto            Hailuoto        SCB6
-    ## 894 Bothnian Bay Finland            Hailuoto            Hailuoto          HG
-    ## 901 Bothnian Bay Finland         Iso-Huituri         Iso-Huituri          HG
-    ## 909 Bothnian Bay Finland Kalajokisuun edusta Kalajokisuun edusta          HG
-    ## 910 Bothnian Bay Finland Kalajokisuun edusta Kalajokisuun edusta        HBCD
-    ##            detGroup      meanLY      HQS Contamination.ratio HELCOM_ID
-    ## 892 Organo-bromines   1.8604651   0.0085        2.188782e+02         1
-    ## 893 Chlorobiphenyls  10.1162791  75.0000        1.348837e-01         1
-    ## 894          Metals  85.7232129  20.0000        4.286161e+00         1
-    ## 901          Metals 239.1652149  20.0000        1.195826e+01         1
-    ## 909          Metals 120.0000000  20.0000        6.000000e+00         1
-    ## 910 Organo-bromines   0.6088708 167.0000        3.645933e-03         1
-    ##                                 level_3
-    ## 892 Bothnian Bay Finnish Coastal waters
-    ## 893 Bothnian Bay Finnish Coastal waters
-    ## 894 Bothnian Bay Finnish Coastal waters
-    ## 901 Bothnian Bay Finnish Coastal waters
-    ## 909 Bothnian Bay Finnish Coastal waters
-    ## 910 Bothnian Bay Finnish Coastal waters
+    ##           region country             station         stationName Substance
+    ## 892 Bothnian Bay Finland            Hailuoto            Hailuoto      SBD6
+    ## 893 Bothnian Bay Finland            Hailuoto            Hailuoto      SCB6
+    ## 894 Bothnian Bay Finland            Hailuoto            Hailuoto        HG
+    ## 901 Bothnian Bay Finland         Iso-Huituri         Iso-Huituri        HG
+    ## 909 Bothnian Bay Finland Kalajokisuun edusta Kalajokisuun edusta        HG
+    ## 910 Bothnian Bay Finland Kalajokisuun edusta Kalajokisuun edusta      HBCD
+    ##                Type      Status Threshold           CR Matrix HELCOM_ID
+    ## 892 Organo-bromines   1.8604651    0.0085 2.188782e+02  Biota         1
+    ## 893 Chlorobiphenyls  10.1162791   75.0000 1.348837e-01  Biota         1
+    ## 894          Metals  85.7232129   20.0000 4.286161e+00  Biota         1
+    ## 901          Metals 239.1652149   20.0000 1.195826e+01  Biota         1
+    ## 909          Metals 120.0000000   20.0000 6.000000e+00  Biota         1
+    ## 910 Organo-bromines   0.6088708  167.0000 3.645933e-03  Biota         1
+    ##                                 level_3 Area_km2
+    ## 892 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 893 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 894 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 901 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 909 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 910 Bothnian Bay Finnish Coastal waters 5548.123
 
-Save the indicator data, now including information on which assessment
-units they belong to
+Add counts of stations and observations
+
+``` r
+# count stations for Level3
+stn_count3 <- df3 %>%
+  distinct(HELCOM_ID,level_3,Matrix,Substance,station,stationName) %>%
+  group_by(HELCOM_ID,level_3,Matrix,Substance) %>%
+  summarise(CountStations=n()) %>%
+  ungroup()
+
+# count observations for Level3
+data_count3 <- df3 %>%
+  group_by(HELCOM_ID,level_3,Matrix,Substance) %>%
+  summarise(CountData=n()) %>%
+  ungroup()
+
+# merge L3 counts back to original L3 data 
+
+df3 <- df3 %>%
+  left_join(stn_count3,by=c("HELCOM_ID","level_3","Matrix","Substance")) %>%
+  left_join(data_count3,by=c("HELCOM_ID","level_3","Matrix","Substance"))
+
+# count stations for Level4
+stn_count4 <- df4 %>%
+  distinct(HELCOM_ID,Name,Matrix,Substance,station,stationName) %>%
+  group_by(HELCOM_ID,Name,Matrix,Substance) %>%
+  summarise(CountStations=n()) %>%
+  ungroup()
+
+# count observations for Level4
+data_count4 <- df4 %>%
+  group_by(HELCOM_ID,Name,Matrix,Substance) %>%
+  summarise(CountData=n()) %>%
+  ungroup()
+
+# merge L4 counts back to original L4 data 
+
+df4 <- df4 %>%
+  left_join(stn_count4,by=c("HELCOM_ID","Name","Matrix","Substance")) %>%
+  left_join(data_count4,by=c("HELCOM_ID","Name","Matrix","Substance"))
+```
+
+Add spatial confidence based on km2 per sample ‘\<500 km2 per sample:
+High ’500 - 5000 km2 per sample: Moderate’\>5000 km2 per sample: Low
+
+``` r
+km2perSampleBounds<-c(500,5000)
+conf<-c("L","M","H")
+
+df3 <- df3 %>%
+  mutate(km2perSample=Area_km2/CountData)
+df3 <- df3 %>%
+  rowwise() %>%
+  mutate(ix=length(km2perSampleBounds[km2perSampleBounds>km2perSample])) %>%
+  mutate(ConfSpatial=conf[ix+1]) %>%
+  dplyr::select(-ix)
+
+df4 <- df4 %>%
+  mutate(km2perSample=Area_km2/CountData)
+
+df4 <- df4 %>%
+  rowwise() %>%
+  mutate(ix=length(km2perSampleBounds[km2perSampleBounds>km2perSample])) %>%
+  mutate(ConfSpatial=conf[ix+1]) %>%
+  dplyr::select(-ix)
+```
+
+Load table of confidences for threshold values
+
+``` r
+dfConfThreshold <- read.table("./input/confidence_thresholds.txt",sep=";",header=T) 
+
+print(dfConfThreshold)
+```
+
+    ##        Substance       Matrix ConfThresh                            Comment
+    ## 1            ANT     Sediment          H                                   
+    ## 2             CD     Sediment          H                                   
+    ## 3           HBCD     Sediment          H                                   
+    ## 4             PB     Sediment          M                                   
+    ## 5           SBD6     Sediment          H                                   
+    ## 6          TBTIN     Sediment          H                                   
+    ## 7             PB        Biota          M                                   
+    ## 8             HG        Biota          H                                   
+    ## 9           HBCD        Biota          H                                   
+    ## 10           FLU        Biota          H                                   
+    ## 11           BAP        Biota          H                                   
+    ## 12            CD        Biota          M                                   
+    ## 13 Radioactive s        Biota          M                                   
+    ## 14          PFOS        Biota          H                                   
+    ## 15          SBD6        Biota          H                                   
+    ## 16          SCB6        Biota          L                                   
+    ## 17           SDX        Biota          H                                   
+    ## 18            CD        Water          H                                   
+    ## 19 Radioactive s        Water          M                                   
+    ## 20            PB        Water          H                                   
+    ## 21         TBTIN        Water          H                                   
+    ## 22           VDS Bio. Effects          M matrix changed to bio. effects CJM
+    ## 23        PYR1OH Bio. Effects          M                       added by CJM
+
+Join threshold confidences to L3 and L4 indicator tables
+
+``` r
+df3 <- df3 %>%
+  left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
+  mutate(AU_scale=3) 
+
+df4 <- df4 %>%
+  left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
+  mutate(AU_scale=4)
+```
+
+Add random confidences for method to L3 and L4 indicator tables
+
+``` r
+conf<-c("L","M","H")
+df3[,"ConfMethod"]<-round(runif(nrow(df3), min=0.5, max=3.49999))
+
+df3 <- df3 %>%
+  rowwise() %>%
+  mutate(ConfMethod=conf[ConfMethod]) %>%
+  ungroup()
+
+df4[,"ConfMethod"]<-round(runif(nrow(df4), min=0.5, max=3.49999))
+df4 <- df4 %>%
+  rowwise() %>%
+  mutate(ConfMethod=conf[ConfMethod]) %>%
+  ungroup()
+```
+
+Add random temporal confidences to L3 and L4 indicator tables
+
+``` r
+conf<-c("L","M","H")
+df3[,"ConfTemp"]<-round(runif(nrow(df3), min=0.5, max=3.49999))
+
+df3 <- df3 %>%
+  rowwise() %>%
+  mutate(ConfTemp=conf[ConfTemp]) %>%
+  ungroup()
+
+df4[,"ConfTemp"]<-round(runif(nrow(df4), min=0.5, max=3.49999))
+df4 <- df4 %>%
+  rowwise() %>%
+  mutate(ConfTemp=conf[ConfTemp]) %>%
+  ungroup()
+```
+
+Select only columns needed
+
+``` r
+df3 <- df3 %>%
+  mutate(AU_scale=3) %>%
+  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Matrix,Threshold,Status,CR,
+                ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
+
+
+df4 <- df4 %>%
+  mutate(AU_scale=4) %>%
+  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Matrix,Threshold,Status,CR,
+                ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
+```
+
+Save the indicator data, including \* information on which assessment
+units they belong to \* threshold confidence \* method confidence \*
+number of stations in AU \* number of data points per km2 \* spatial
+confidence \* temporal confidence
 
 ``` r
 write.table(df3,file="./input/assessmentdata_L3.csv",sep=";",row.names=F,col.names=T,quote=T)

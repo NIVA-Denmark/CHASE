@@ -9,7 +9,7 @@ units3 <- read_sf(dsn = "../gis/_ags_HELCOM_subbasins_with_coastal_and_offshore_
                   layer = "HELCOM_subbasins_with_coastal_and_offshore_division_2018_1")
 
 units3 <- units3 %>%
-  dplyr::select(HELCOM_ID,level_3)
+  dplyr::select(HELCOM_ID,level_3,Area_km2=area_km2)
 
 ggplot() + 
   ggtitle("Level 3 Assessment Units") +
@@ -17,14 +17,11 @@ ggplot() +
 
 st_write(units3, "assessment_units/AssessmentUnits3.shp",append=F)
 
-
-
 units4 <- read_sf(dsn = "../gis/_ags_HELCOM_subbasins_with_coastal_WFD_waterbodies_or_watertypes_2018_11", 
                   layer = "HELCOM_subbasins_with_coastal_WFD_waterbodies_or_watertypes_2018_1")
 
 units4 <- units4 %>%
-  dplyr::select(Name,HELCOM_ID) %>%
-  filter(!is.na(HELCOM_ID))
+  dplyr::select(Name,HELCOM_ID,Area_km2)
 
 ggplot() + 
   ggtitle("Level 4 Assessment Units") +
