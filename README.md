@@ -24,7 +24,10 @@ semi-quantitative confidence parameters for each indicator.
 
 The CHASE assessment is carried out by calling the function
 `CHASEassessment`. The source code for this function is contained in
-[CHASE.R](src/CHASE.R)
+[CHASE.R](src/CHASE.R) and auxiliary functions are contained in
+[CHASE_functions.R](src/CHASE_functions.R). These two files contain the
+code required for making the assessment. Other files in this repository
+are used only for testing.
 
 ``` r
   source('src/CHASE.R')
@@ -74,3 +77,7 @@ By default, the function returns a list of 4 dataframes:
     separate row and Matrices in columns.
 4.  **‘AssessmentUnits’** gives an aggregated overall result for each
     AU.
+
+#### Test
+
+The CHASE assessment is tested here: [CHASE_test.md](CHASE_test.md)

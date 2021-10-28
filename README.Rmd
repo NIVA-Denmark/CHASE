@@ -4,7 +4,8 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, 
+                      fig.path = "markdown_images/")
 ```
 
 ## The HELCOM hazardous substance status assessment tool
@@ -14,7 +15,7 @@ The CHASE tool integrates data on hazardous substances in water, sediments and b
 In addition to this primary status assessment, the CHASE tool makes a secondary assessment, estimating the confidence if the primary assessment result. This is done by combining a number of qualitative and semi-quantitative confidence parameters for each indicator.  
 
 #### Assessment function
-The CHASE assessment is carried out by calling the function  `CHASEassessment`. The source code for this function is contained in [CHASE.R](src/CHASE.R)
+The CHASE assessment is carried out by calling the function  `CHASEassessment`. The source code for this function is contained in [CHASE.R](src/CHASE.R) and auxiliary functions are contained in [CHASE_functions.R](src/CHASE_functions.R). These two files contain the code required for making the assessment. Other files in this repository are used only for testing.
 
 ```{r function call, eval=FALSE}
   source('src/CHASE.R')
@@ -53,4 +54,7 @@ By default, the function returns a list of 4 dataframes:
 3. **'Matrix by column'** gives an aggregated result with each AU on a separate row and Matrices in columns.
 4. **'AssessmentUnits'** gives an aggregated overall result for each AU.
 
+#### Test
+
+The CHASE assessment is tested here: [CHASE_test.md](CHASE_test.md)
 

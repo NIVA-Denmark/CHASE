@@ -105,7 +105,7 @@ map4 <- ggplot() +
 map3+map4
 ```
 
-![](test_dataset_files/figure-gfm/read%20shape%20files-1.png)<!-- -->
+![](markdown_images/read%20shape%20files-1.png)<!-- -->
 
 Read indicator data from text file
 [input/bsii_by_stn.txt](input/bsii_by_stn.txt)
@@ -135,7 +135,7 @@ ggplot() +
   geom_sf(data=df_sf, colour="red")
 ```
 
-![](test_dataset_files/figure-gfm/indicators%20to%20sf-1.png)<!-- -->
+![](markdown_images/indicators%20to%20sf-1.png)<!-- -->
 
 Intersect the indicator data points with the polygons to get dataframes
 of indicators with added information about which assessment unit each

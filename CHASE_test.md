@@ -43,17 +43,17 @@ head(df3)
     ## 5        3 Bothnian Bay Finnish Coastal waters 5548.123    CS-137  Rad  Biota
     ## 6        3 Bothnian Bay Finnish Coastal waters 5548.123        HG   HM  Biota
     ##            CR ConfThresh CountStations CountData ConfSpatial ConfMethod
-    ## 1   4.2861606          H            10        10           M          L
-    ## 2 218.8782490          H             7         8           M          M
-    ## 3   0.1348837          H             7         8           M          M
-    ## 4   2.2830000          H             2         2           M          H
-    ## 5   1.5800000          H             2         2           M          H
-    ## 6  11.9582607          H            10        10           M          H
+    ## 1   4.2861606          H            10        10           M          M
+    ## 2 218.8782490          H             7         8           M          H
+    ## 3   0.1348837          H             7         8           M          L
+    ## 4   2.2830000          H             2         2           M          M
+    ## 5   1.5800000          H             2         2           M          L
+    ## 6  11.9582607          H            10        10           M          L
     ##   ConfTemp
-    ## 1        L
-    ## 2        M
-    ## 3        M
-    ## 4        M
+    ## 1        H
+    ## 2        L
+    ## 3        H
+    ## 4        H
     ## 5        M
     ## 6        M
 
@@ -79,12 +79,12 @@ head(resL3)
     ## # A tibble: 6 x 9
     ##   AU               Worst  ConSum Status ConfScore Confidence    HM   Org Penalty
     ##   <chr>            <fct>   <dbl> <chr>      <dbl> <chr>      <dbl> <dbl> <chr>  
-    ## 1 Arkona Basin     Biota  101.   Bad        0.406 Class III      3     8 0%     
-    ## 2 Arkona Basin Da~ Biota   26.3  Bad        0.569 Class II       3     8 0%     
-    ## 3 Arkona Basin Ge~ Biota    2.85 Moder~     0.435 Class III      3     3 0%     
-    ## 4 Bay of Mecklenb~ Sedim~   6.47 Poor       0.46  Class III      3     3 0%     
-    ## 5 Belts Danish Co~ Sedim~ 141.   Bad        0.495 Class III      3     8 0%     
-    ## 6 Bornholm Basin   Biota   31.4  Bad        0.35  Class III      3     6 0%
+    ## 1 Arkona Basin     Biota  101.   Bad        0.433 Class III      3     8 0%     
+    ## 2 Arkona Basin Da~ Biota   26.3  Bad        0.572 Class II       3     8 0%     
+    ## 3 Arkona Basin Ge~ Biota    2.85 Moder~     0.492 Class III      3     3 0%     
+    ## 4 Bay of Mecklenb~ Sedim~   6.47 Poor       0.481 Class III      3     3 0%     
+    ## 5 Belts Danish Co~ Sedim~ 141.   Bad        0.511 Class II       3     8 0%     
+    ## 6 Bornholm Basin   Biota   31.4  Bad        0.346 Class III      3     6 0%
 
 Plot the variations in confidence for the overall assessment
 
@@ -96,7 +96,7 @@ p3<-ggplot(resL3) +
 plot(p3)
 ```
 
-![](CHASE_test_files/figure-gfm/plot%20confidence%20results-1.png)<!-- -->
+![](markdown_images/plot%20confidence%20results-1.png)<!-- -->
 
 ``` r
 p4<-ggplot(resL4) +
@@ -106,7 +106,7 @@ p4<-ggplot(resL4) +
 plot(p4)
 ```
 
-![](CHASE_test_files/figure-gfm/plot%20confidence%20results-2.png)<!-- -->
+![](markdown_images/plot%20confidence%20results-2.png)<!-- -->
 
 Save the results and the plots
 
