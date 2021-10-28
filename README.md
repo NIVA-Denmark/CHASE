@@ -6,19 +6,19 @@ The CHASE assessment is carried out by calling the function `CHASEassessment` fr
 A required argument for the function is a dataframe containing the assessment indicator data.
 
 | Column | Required | Description | 
-| :---         |     :---      |
-| *AU* |  | assessment unit |
+| :---         |     :---      |     :---      |
+| *AU* | NO<sup>1</sup>  | assessment unit |
 | *Matrix* | YES | Water, Sediment, Biota |
 | *Substance* | YES | name of indicator |
 | *Type* | YES | HM / Org |
-| *Threshold* |  | concentration limit  |
-| *Status*    |  | observed concentration |
-| *CR* | YES<sup>1<sup> | ratio of status to threshold |
-| *ConfTemp* |  | temporal confidence H[igh]/M[oderate]/L[ow] |
-| *ConfSpatial* |  | temporal confidence  H[igh]/M[oderate]/L[ow] |
-| *ConfAcc* |  | accuracy confidence  H[igh]/M[oderate]/L[ow] |
-| *ConfMethod* |  | methodological confidence  H[igh]/M[oderate]/L[ow] |
-| *ConfThresh* |  | threshold confidence H[igh]/M[oderate]/L[ow] |
+| *Threshold* | NO | concentration limit  |
+| *Status*    | NO | observed concentration |
+| *CR* | YES<sup>2</sup> | ratio of status to threshold |
+| *ConfTemp* | NO<sup>3</sup> | temporal confidence H[igh]/M[oderate]/L[ow] |
+| *ConfSpatial* | NO<sup>3</sup> | temporal confidence  H[igh]/M[oderate]/L[ow] |
+| *ConfAcc* | NO<sup>3</sup> | accuracy confidence  H[igh]/M[oderate]/L[ow] |
+| *ConfMethod* | NO<sup>3</sup> | methodological confidence  H[igh]/M[oderate]/L[ow] |
+| *ConfThresh* | NO<sup>3</sup>| threshold confidence H[igh]/M[oderate]/L[ow] |
 
 By default, the function returns 
 
