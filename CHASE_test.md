@@ -3,14 +3,16 @@ CHASE Test
 
 ## Testing the CHASE hazardous substances assessment tool
 
-This is a test of the CHASE tool, using two inout datasets: one for
+This is a test of the CHASE tool, using two input datasets: one for
 level 3 assessment units and one for level 4 assessment units. Both
 datasets are based on the same indicator results but are aggregated at
 different spatial scales. A description of the preparation of these test
-data sets can be seen in [test_dataset.md](test_dataset.md)
+data sets can be seen in [test_dataset.md](test_dataset.md).
+
+The results of the test are stored in the [output](output/) folder.
 
 The code contained in this markdown document is also available as a
-standalone R script in [src/CHASE_test.R](src/CHASE_test.R)
+standalone R script in [src/CHASE_test.R](src/CHASE_test.R).
 
 Load required functions
 
