@@ -173,11 +173,11 @@ Assessment <- function(assessmentdata,
     # calculate numerical values for each confidence rating
     assessmentdata <- assessmentdata %>%
       rowwise() %>%
-      mutate(ConfScoreTemp=ConfValue(ConfTemp),
-             ConfScoreSpatial=ConfValue(ConfSpatial),
-             ConfScoreAcc=ConfValue(ConfAcc),
-             ConfScoreMethod=ConfValue(ConfMethod),
-             ConfScoreThresh=ConfValue(ConfThresh))
+      mutate(ConfScoreTemp=ifelse(is.na(ConfTemp),0,ConfValue(ConfTemp)),
+             ConfScoreSpatial=ifelse(is.na(ConfSpatial),0,ConfValue(ConfSpatial)),
+             ConfScoreAcc=ifelse(is.na(ConfAcc),0,ConfValue(ConfAcc)),
+             ConfScoreMethod=ifelse(is.na(ConfMethod),0,ConfValue(ConfMethod)),
+             ConfScoreThresh=ifelse(is.na(ConfThresh),0,ConfValue(ConfThresh)))
     
 
     # calculate overall indicator confidence

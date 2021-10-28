@@ -7,8 +7,6 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-[back to README](README.md)
-
 ## Development of two indicator datasets for testing the CHASE assessment tool
 
 This document describes the development of datasets for testing the CHASE assessment tool. By modifying the steps below or by using different sources of data, alternative datasets can be created for input to the CHASE assessment tool.
@@ -322,8 +320,7 @@ write.table(df4,file="./input/assessmentdata_L4.csv",sep=";",row.names=F,col.nam
 ```
 This markdown document is created by knitting the RMarkdown file [test_dataset.Rmd](test_dataset.Rmd). The steps here for generating test data can be run without generating markdown, using the standalone R script [src/create_test_dataset.R](src/create_test_dataset.R)
 
-Updated 28-10-2021 [cjm@niva-dk.dk](cjm@niva-dk.dk)
+Updated 28-10-2021 [cjm@niva-dk.dk](mailto:cjm@niva-dk.dk)
 
-[back to README](README.md)
 
 

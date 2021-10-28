@@ -1,8 +1,6 @@
 CHASE test dataset
 ================
 
-[back to README](README.md)
-
 ## Development of two indicator datasets for testing the CHASE assessment tool
 
 This document describes the development of datasets for testing the
@@ -299,6 +297,7 @@ print(dfConfThreshold)
     ## 21         TBTIN        Water          H                                   
     ## 22           VDS Bio. Effects          M matrix changed to bio. effects CJM
     ## 23        PYR1OH Bio. Effects          M                       added by CJM
+    ## 24          PFOS        Water          H                       added by CJM
 
 Original source for threshold confidence data is Table 2 in this meeting
 document:
@@ -393,6 +392,4 @@ This markdown document is created by knitting the RMarkdown file
 data can be run without generating markdown, using the standalone R
 script [src/create_test_dataset.R](src/create_test_dataset.R)
 
-Updated 28-10-2021 [cjm@niva-dk.dk](cjm@niva-dk.dk)
-
-[back to README](README.md)
+Updated 28-10-2021 <cjm@niva-dk.dk>

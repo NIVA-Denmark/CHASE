@@ -22,3 +22,4 @@ PB;Water;H;
 TBTIN;Water;H;
 VDS;Bio. Effects;M;matrix changed to bio. effects CJM
 PYR1OH;Bio. Effects;M;added by CJM
+PFOS;Water;H;added by CJM
