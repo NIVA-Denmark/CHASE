@@ -16,7 +16,7 @@ library("tidyr")
 
 
 
-Assessment <- function(assessmentdata, 
+CHASEassessment <- function(assessmentdata, 
                        summarylevel=NA,
                        StatusClasses=5,
                        ndigits=3) {
@@ -34,8 +34,6 @@ Assessment <- function(assessmentdata,
   ConfWeightAcc = 0.25
   ConfWeightMethod = 0.25
   ConfWeightThresh = 0.15
-  
-  
   
   # Get column names from the input data
   cnames <- names(assessmentdata)
@@ -65,11 +63,17 @@ Assessment <- function(assessmentdata,
   } else{
     UserConfSpatial = FALSE
     requiredcols <- c(requiredcols,c("Grids","GridsAssessed","Stations","Area_km2"))
-    extracolsConf <- c("ConfTemp",
-                       "ConfAcc","ConfMethod","ConfThresh")
+    extracolsConf <- c("ConfTemp","ConfMethod","ConfThresh")
+                       
+  }
+  if (toupper('ConfAcc') %in% toupper(cnames)) {
+    bConfAcc<-TRUE
+    # user supplied ConfAcc
+  }else{
+    bConfAcc<-FALSE
   }
 
-  # extra columns - if missing valiues will be assumed for these columns
+  # extra columns - if missing, values will be assumed for these columns
   #                 and we can still do the assessment
   extracols <- c("AU","Response",
                  extracolsConf)
@@ -175,21 +179,37 @@ Assessment <- function(assessmentdata,
       rowwise() %>%
       mutate(ConfScoreTemp=ifelse(is.na(ConfTemp),0,ConfValue(ConfTemp)),
              ConfScoreSpatial=ifelse(is.na(ConfSpatial),0,ConfValue(ConfSpatial)),
-             ConfScoreAcc=ifelse(is.na(ConfAcc),0,ConfValue(ConfAcc)),
              ConfScoreMethod=ifelse(is.na(ConfMethod),0,ConfValue(ConfMethod)),
              ConfScoreThresh=ifelse(is.na(ConfThresh),0,ConfValue(ConfThresh)))
+    if(bConfAcc){
+      assessmentdata <- assessmentdata %>%
+        rowwise() %>%
+        mutate(ConfScoreAcc=ifelse(is.na(ConfAcc),0,ConfValue(ConfAcc)))
+    }
     
 
     # calculate overall indicator confidence
-    assessmentdata <- assessmentdata %>%
-      mutate(ConfScore = ConfWeightTemp*ConfScoreTemp + 
-               ConfWeightSpatial*ConfScoreSpatial +
-               ConfWeightAcc*ConfScoreAcc +
-               ConfWeightMethod*ConfScoreMethod +
-               ConfWeightThresh*ConfScoreThresh)
-    
-    assessmentdata <- assessmentdata %>% 
-      dplyr::select(-c(ConfScoreTemp,ConfScoreSpatial,ConfScoreAcc,ConfScoreMethod,ConfScoreThresh))
+    if(bConfAcc){
+      assessmentdata <- assessmentdata %>%
+        mutate(ConfScore = ConfWeightTemp*ConfScoreTemp + 
+                 ConfWeightSpatial*ConfScoreSpatial +
+                 ConfWeightAcc*ConfScoreAcc +
+                 ConfWeightMethod*ConfScoreMethod +
+                 ConfWeightThresh*ConfScoreThresh)
+      assessmentdata <- assessmentdata %>% 
+        dplyr::select(-c(ConfScoreTemp,ConfScoreSpatial,ConfScoreAcc,ConfScoreMethod,ConfScoreThresh))
+      
+    }else{
+      assessmentdata <- assessmentdata %>%
+        mutate(ConfScore = ConfWeightTemp*ConfScoreTemp + 
+                 ConfWeightSpatial*ConfScoreSpatial +
+                 ConfWeightMethod*ConfScoreMethod +
+                 ConfWeightThresh*ConfScoreThresh)
+      assessmentdata <- assessmentdata %>% 
+        dplyr::select(-c(ConfScoreTemp,ConfScoreSpatial,ConfScoreMethod,ConfScoreThresh))
+      
+    }
+   
  
     # Add columns specifying if the indicator is an organic or heavy metal. Used in confidence penalty calculations
     assessmentdata <- assessmentdata %>%
@@ -381,17 +401,17 @@ Assessment <- function(assessmentdata,
       # return a list with results at all 4 summary levels
       CHASE <- list(
         "Indicators"=assessmentdata,
-        "Matrix by column"=QEspr,
         "Matrix by row"=QEdataOut,
-        "Waterbodies"=CHASEQE
+        "Matrix by column"=QEspr,
+        "AssessmentUnits"=CHASEQE
       )
       return(CHASE)
     } else if(summarylevel == 1) {
       return(assessmentdata)
     } else if (summarylevel == 2) {
-      return(QEspr)
-    } else if (summarylevel == 3) {
       return(QEdataOut)
+    } else if (summarylevel == 3) {
+      return(QEspr)
     } else {
       return(CHASEQE)
     }
