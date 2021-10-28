@@ -21,8 +21,10 @@ addressed, not limited to:
 
 For testing purposes, we used indicator data from the HOLAS II
 assessment. This data was available with indicators per station. The
-indicator data came from the file **CHASEinput060318.xlsx** sheet **By
-station (for BSII only)**.
+indicator data came from the file **CHASEinput060318.xlsx** sheet **‘4.
+BSII’**. This sheet does not include station positions. These were added
+to the dataset by matching up station names to station positions on
+other sheets.
 
 Using shape files for level 3 assessment units and level 4 assessment
 units, we mapped the station positions to assessment units, creating two
@@ -106,26 +108,15 @@ map3+map4
 ![](test_dataset_files/figure-gfm/read%20shape%20files-1.png)<!-- -->
 
 Read indicator data from text file
-[input/holas_ii_indicators_by_station.txt](input/holas_ii_indicators_by_station.txt)
+[input/bsii_by_stn.txt](input/bsii_by_stn.txt)
 
 ``` r
-file <- "input/holas_ii_indicators_by_station.txt"
+file <- "./input/bsii_by_stn.txt"
 
-df <- read.table(file,sep="\t",
+df <- read.table(file,sep=";",
                  header=T,
                  fileEncoding="UTF-8",
                  comment.char="")
-```
-
-Rename columns in indicator data to match CHASE input requirements
-
-``` r
-df <- df %>%
-  rename(Substance=determinand,
-         Type=detGroup,
-         Threshold=HQS,
-         Status=meanLY,
-         CR=Contamination.ratio)
 ```
 
 Convert indicator data frame to simple features
@@ -164,27 +155,20 @@ units.
  head(df3)
 ```
 
-    ##           region country             station         stationName Substance
-    ## 892 Bothnian Bay Finland            Hailuoto            Hailuoto      SBD6
-    ## 893 Bothnian Bay Finland            Hailuoto            Hailuoto      SCB6
-    ## 894 Bothnian Bay Finland            Hailuoto            Hailuoto        HG
-    ## 901 Bothnian Bay Finland         Iso-Huituri         Iso-Huituri        HG
-    ## 909 Bothnian Bay Finland Kalajokisuun edusta Kalajokisuun edusta        HG
-    ## 910 Bothnian Bay Finland Kalajokisuun edusta Kalajokisuun edusta      HBCD
-    ##                Type      Status Threshold           CR Matrix HELCOM_ID
-    ## 892 Organo-bromines   1.8604651    0.0085 2.188782e+02  Biota         1
-    ## 893 Chlorobiphenyls  10.1162791   75.0000 1.348837e-01  Biota         1
-    ## 894          Metals  85.7232129   20.0000 4.286161e+00  Biota         1
-    ## 901          Metals 239.1652149   20.0000 1.195826e+01  Biota         1
-    ## 909          Metals 120.0000000   20.0000 6.000000e+00  Biota         1
-    ## 910 Organo-bromines   0.6088708  167.0000 3.645933e-03  Biota         1
-    ##                                 level_3 Area_km2
-    ## 892 Bothnian Bay Finnish Coastal waters 5548.123
-    ## 893 Bothnian Bay Finnish Coastal waters 5548.123
-    ## 894 Bothnian Bay Finnish Coastal waters 5548.123
-    ## 901 Bothnian Bay Finnish Coastal waters 5548.123
-    ## 909 Bothnian Bay Finnish Coastal waters 5548.123
-    ## 910 Bothnian Bay Finnish Coastal waters 5548.123
+    ##         Station Matrix Substance Type          CR Units Response ConfThresh
+    ## 673    Hailuoto  Biota        HG   HM   4.2861606   All        +          H
+    ## 674    Hailuoto  Biota      SBD6  Org 218.8782490   All        +          H
+    ## 675    Hailuoto  Biota      SCB6  Org   0.1348837   All        +          H
+    ## 676    Hailuoto  Biota    CS-137  Rad   2.2830000   All        +          H
+    ## 677    HAILUOTO  Biota    CS-137  Rad   1.5800000   All        +          H
+    ## 711 Iso-Huituri  Biota        HG   HM  11.9582607   All        +          H
+    ##     ConfStatus Datatype HELCOM_ID                             level_3 Area_km2
+    ## 673          H      All         1 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 674          H      All         1 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 675          H      All         1 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 676          H      All         1 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 677          H      All         1 Bothnian Bay Finnish Coastal waters 5548.123
+    ## 711          H      All         1 Bothnian Bay Finnish Coastal waters 5548.123
 
 ## Further processing, incl. confidences
 
@@ -195,7 +179,7 @@ Add counts of stations and observations
 ``` r
 # count stations for Level3
 stn_count3 <- df3 %>%
-  distinct(HELCOM_ID,level_3,Matrix,Substance,station,stationName) %>%
+  distinct(HELCOM_ID,level_3,Matrix,Substance,Station) %>%
   group_by(HELCOM_ID,level_3,Matrix,Substance) %>%
   summarise(CountStations=n()) %>%
   ungroup()
@@ -214,7 +198,7 @@ df3 <- df3 %>%
 
 # count stations for Level4
 stn_count4 <- df4 %>%
-  distinct(HELCOM_ID,Name,Matrix,Substance,station,stationName) %>%
+  distinct(HELCOM_ID,Name,Matrix,Substance,Station) %>%
   group_by(HELCOM_ID,Name,Matrix,Substance) %>%
   summarise(CountStations=n()) %>%
   ungroup()
@@ -303,7 +287,8 @@ Original source for threshold confidence data is Table 2 in this meeting
 document:
 <https://portal.helcom.fi/meetings/HOLAS%20II%20HZ%20WS%201-2018-518/MeetingDocuments/2-3%20Confidence%20setting%20for%20CHASE%20integrated%20assessment.pdf>
 
-Join threshold confidences to L3 and L4 indicator tables
+Join threshold confidences to L3 and L4 indicator tables *(this is not
+run because *ConfThresh* is already included in the indicator data)*
 
 ``` r
 df3 <- df3 %>%
@@ -360,13 +345,13 @@ Select only columns needed
 ``` r
 df3 <- df3 %>%
   mutate(AU_scale=3) %>%
-  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 
 df4 <- df4 %>%
   mutate(AU_scale=4) %>%
-  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 ```
 

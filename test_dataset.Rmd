@@ -18,7 +18,8 @@ This could also serve as a model for development the actual assessment as well. 
 
 ## Data sources
 
-For testing purposes, we used indicator data from the HOLAS II assessment. This data was available with indicators per station. The indicator data came from the file **CHASEinput060318.xlsx** sheet **By station (for BSII only)**.
+For testing purposes, we used indicator data from the HOLAS II assessment. This data was available with indicators per station. The indicator data came from the file **CHASEinput060318.xlsx** sheet **'4. BSII'**. 
+This sheet does not include station positions. These were added to the dataset by matching up station names to station positions on other sheets.
 
 Using shape files for level 3 assessment units and level 4 assessment units, we mapped the station positions to assessment units, creating two input data sets for the CHASE assessment:
 
@@ -90,23 +91,16 @@ map4 <- ggplot() +
 map3+map4
 ```
 
-Read indicator data from text file [input/holas_ii_indicators_by_station.txt](input/holas_ii_indicators_by_station.txt) 
-```{r read indicators}
-file <- "input/holas_ii_indicators_by_station.txt"
+Read indicator data from text file [input/bsii_by_stn.txt](input/bsii_by_stn.txt) 
 
-df <- read.table(file,sep="\t",
+
+```{r read indicators}
+file <- "./input/bsii_by_stn.txt"
+
+df <- read.table(file,sep=";",
                  header=T,
                  fileEncoding="UTF-8",
                  comment.char="")
-```
-Rename columns in indicator data to match CHASE input requirements
-```{r rename indicator columns}
-df <- df %>%
-  rename(Substance=determinand,
-         Type=detGroup,
-         Threshold=HQS,
-         Status=meanLY,
-         CR=Contamination.ratio)
 ```
 
 Convert indicator data frame to simple features
@@ -148,7 +142,7 @@ Add counts of stations and observations
 ```{r counts data and stations, warning=FALSE, message=FALSE}
 # count stations for Level3
 stn_count3 <- df3 %>%
-  distinct(HELCOM_ID,level_3,Matrix,Substance,station,stationName) %>%
+  distinct(HELCOM_ID,level_3,Matrix,Substance,Station) %>%
   group_by(HELCOM_ID,level_3,Matrix,Substance) %>%
   summarise(CountStations=n()) %>%
   ungroup()
@@ -167,7 +161,7 @@ df3 <- df3 %>%
 
 # count stations for Level4
 stn_count4 <- df4 %>%
-  distinct(HELCOM_ID,Name,Matrix,Substance,station,stationName) %>%
+  distinct(HELCOM_ID,Name,Matrix,Substance,Station) %>%
   group_by(HELCOM_ID,Name,Matrix,Substance) %>%
   summarise(CountStations=n()) %>%
   ungroup()
@@ -233,7 +227,8 @@ Original source for threshold confidence data is Table 2 in this meeting documen
 https://portal.helcom.fi/meetings/HOLAS%20II%20HZ%20WS%201-2018-518/MeetingDocuments/2-3%20Confidence%20setting%20for%20CHASE%20integrated%20assessment.pdf
 
 Join threshold confidences to L3 and L4 indicator tables
-```{r add threshold confidences, warning=FALSE}
+*(this is not run because _ConfThresh_ is already included in the indicator data)*
+```{r add threshold confidences, warning=FALSE, eval=FALSE}
 
 
 df3 <- df3 %>%
@@ -290,13 +285,13 @@ Select only columns needed
 ```{r select columns, warning=FALSE}
 df3 <- df3 %>%
   mutate(AU_scale=3) %>%
-  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 
 df4 <- df4 %>%
   mutate(AU_scale=4) %>%
-  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 ```

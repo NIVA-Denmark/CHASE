@@ -30,21 +30,12 @@ map3+map4
 
 # Read indicator data from text file
 
-file <- "input/holas_ii_indicators_by_station.txt"
+file <- "./input/bsii_by_stn.txt"
 
-df <- read.table(file,sep="\t",
+df <- read.table(file,sep=";",
                  header=T,
                  fileEncoding="UTF-8",
                  comment.char="")
-
-# Rename columns in indicator data to match CHASE input requirements
-
-df <- df %>%
-  rename(Substance=determinand,
-         Type=detGroup,
-         Threshold=HQS,
-         Status=meanLY,
-         CR=Contamination.ratio)
 
 # Convert indicator data frame to simple features
 df_sf <- st_as_sf(df, 
@@ -83,7 +74,7 @@ head(df3)
 
 # count stations for Level3
 stn_count3 <- df3 %>%
-  distinct(HELCOM_ID,level_3,Matrix,Substance,station,stationName) %>%
+  distinct(HELCOM_ID,level_3,Matrix,Substance,Station) %>%
   group_by(HELCOM_ID,level_3,Matrix,Substance) %>%
   summarise(CountStations=n()) %>%
   ungroup()
@@ -102,7 +93,7 @@ df3 <- df3 %>%
 
 # count stations for Level4
 stn_count4 <- df4 %>%
-  distinct(HELCOM_ID,Name,Matrix,Substance,station,stationName) %>%
+  distinct(HELCOM_ID,Name,Matrix,Substance,Station) %>%
   group_by(HELCOM_ID,Name,Matrix,Substance) %>%
   summarise(CountStations=n()) %>%
   ungroup()
@@ -157,14 +148,14 @@ print(dfConfThreshold)
 # https://portal.helcom.fi/meetings/HOLAS%20II%20HZ%20WS%201-2018-518/MeetingDocuments/2-3%20Confidence%20setting%20for%20CHASE%20integrated%20assessment.pdf
 
 # Join threshold confidences to L3 and L4 indicator tables
-
-df3 <- df3 %>%
-  left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
-  mutate(AU_scale=3) 
-
-df4 <- df4 %>%
-  left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
-  mutate(AU_scale=4)
+# (NOT NEEDED as ConfThresh is already included)
+# df3 <- df3 %>%
+#   left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
+#   mutate(AU_scale=3) 
+# 
+# df4 <- df4 %>%
+#   left_join(dfConfThreshold,by=c("Substance","Matrix")) %>%
+#   mutate(AU_scale=4)
 
 # Methodological confidence
 
@@ -206,12 +197,12 @@ df4 <- df4 %>%
 
 df3 <- df3 %>%
   mutate(AU_scale=3) %>%
-  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=level_3,Area_km2,Substance,Type,Matrix,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 df4 <- df4 %>%
   mutate(AU_scale=4) %>%
-  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,Threshold,Status,CR,
+  dplyr::select(AU_scale,AU=HELCOM_ID,Area_km2,Substance,Type,Matrix,CR,
                 ConfThresh,CountStations,CountData,ConfSpatial,ConfMethod,ConfTemp)
 
 # Save the indicator data, including 
