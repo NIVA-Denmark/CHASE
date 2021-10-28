@@ -21,8 +21,11 @@ input data sets for the CHASE assessment:
 ### Shape files
 
 The shapes files used were downloaded from the HELCOM maps and data
-service (MADS): Level 3:
+service (MADS):
+
+Level 3:
 <https://maps.helcom.fi/website/MADS/download/?id=e5a59af9-c244-4069-9752-be3acc5dabed>
+
 Level 4:
 <https://maps.helcom.fi/website/MADS/download/?id=67d653b1-aad1-4af4-920e-0683af3c4a48>
 
@@ -73,10 +76,12 @@ units4 <- read_sf(dsn = "./assessment_units",
                   layer = "AssessmentUnits4")
 
 # show maps of the assessment units
-map3 <- ggplot() + 
+map3 <- ggplot() +
+  theme_minimal(base_size=9) +
   ggtitle("Level 3 Assessment Units") +
   geom_sf(data=units3, colour="black", fill=NA)
-map4 <- ggplot() + 
+map4 <- ggplot() +
+  theme_minimal(base_size=9) + 
   ggtitle("Level 4 Assessment Units") +
   geom_sf(data=units4, colour="black",  fill=NA)
 
@@ -100,14 +105,15 @@ df <- read.table(file,sep="\t",
 Convert indicator data frame to simple features
 
 ``` r
-df_sf <- st_as_sf(df, coords = c("longitude", "latitude"), 
-                 crs = 4326)
+df_sf <- st_as_sf(df, coords = c("longitude", "latitude"), crs = 4326) # EPSG 4326 is WGS84
 
 # transform the sf dataframe to the same projection as the assessment units
 df_sf <- st_transform(df_sf,crs=st_crs(units3))
 
-ggplot() + 
-  ggtitle("Level 4 Assessment Units + Indicator positions") +
+# plot the stations and the assessment units together
+ggplot() +
+  theme_minimal(base_size=9) + 
+  ggtitle("Level 4 Assessment Units \n+ Indicator positions") +
   geom_sf(data=units4, colour="black",  fill=NA) +
   geom_sf(data=df_sf, colour="red")
 ```
@@ -120,4 +126,12 @@ about the assessment units
 ``` r
  df3 <- st_intersection(df_sf, units3)
  df4 <- st_intersection(df_sf, units4)
+```
+
+Save the indicator data, now including information on which assessment
+units they belong to
+
+``` r
+write.table(df3,file="./input/assessmentdata_L3.csv",sep=";",row.names=F,col.names=T,quote=T)
+write.table(df4,file="./input/assessmentdata_L4.csv",sep=";",row.names=F,col.names=T,quote=T)
 ```
